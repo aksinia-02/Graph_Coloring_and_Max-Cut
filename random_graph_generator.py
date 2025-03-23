@@ -4,6 +4,7 @@ import random
 import csv
 import string
 import math
+from tools import *
 
 def generate_random_key(length=8):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
@@ -80,29 +81,32 @@ def save_into_csv_file(G, p):
 
     print(f"New file {filename}")
 
-def generate_and_save_50_graphs(n, p):
+def generate_and_save_25_graphs(n, p):
     for i in range(0, 24):
         sparse_graph = generate_random_graph(n, p)
         save_into_csv_file(sparse_graph, p)
 
-def display_graph(G):
-    plt.figure(figsize=(6, 6))
-    nx.draw(G, with_labels=True, node_color='lightblue', edge_color='gray', node_size=500)
-    plt.show()
-
 #nodes = [25, 50, 100, 300]
-nodes = [200]
-prob = [0.1, 0.3, 0.5, 0.7]
-
-for n in nodes:
-    for p in prob:
-        generate_and_save_50_graphs(n, p)
+# nodes = [200]
+# prob = [0.1, 0.3, 0.5, 0.7]
+#
+# for n in nodes:
+#     for p in prob:
+#         generate_and_save_50_graphs(n, p)
 
 
 # nodes = 7
 # p = 1
 #
 # sparse_graph = generate_random_graph(nodes, p)
+#
+# display_graph(sparse_graph)
+nodes = [60]
+prob = [0.1]
+
+for n in nodes:
+    for p in prob:
+        generate_and_save_25_graphs(n, p)
 #
 # plt.figure(figsize=(6, 6))
 # nx.draw(sparse_graph, with_labels=True, node_color='lightblue', edge_color='gray', node_size=500)
