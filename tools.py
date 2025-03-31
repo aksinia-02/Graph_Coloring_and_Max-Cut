@@ -10,12 +10,10 @@ def display_graph(G):
 def display_colored_graph(G, coloring, color_map):
     """Display the graph with nodes colored based on the assigned coloring."""
 
-    # Get the node colors based on the coloring dictionary and color map
     node_colors = [color_map[coloring.get(node, 1)] for node in G.nodes()]
 
     plt.figure(figsize=(6, 6))
 
-    # Draw the graph with specified node colors
     nx.draw(G, with_labels=True, node_color=node_colors, edge_color='gray', node_size=500, font_size=12,
             font_weight='bold')
 
@@ -34,3 +32,16 @@ def visualize_colors(color_map):
     ax.set_xlim(0, len(color_map))
     ax.set_ylim(0, 1)
     plt.show()
+
+def create_color_sets(num_nodes, num_colors):
+    return [set(range(1, num_colors + 1)) for _ in range(num_nodes)]
+
+def print_neighbors(G):
+    for node in G.nodes:
+        neighbors = G.neighbors(node)
+        result =""
+        for neighbor in neighbors:
+            result += neighbor
+            result += ","
+        print(f"node: {node}, neighbors: {result}")
+        print("")
