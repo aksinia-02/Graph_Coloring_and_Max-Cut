@@ -58,7 +58,7 @@ def main():
     results = []
 
     for folder_name in sorted(os.listdir(data_folder)):
-        if folder_name not in ["n_15_p_50"]:
+        if folder_name not in ["n_30_p_10"]:
             continue
         folder_path = os.path.join(data_folder, folder_name)
 
@@ -97,7 +97,6 @@ def main():
                             else:
                                 chromatic_number = None
                                 execution_time = None
-                            print(f"opt: {opt}, diff: {diff}, chromatic_number: {chromatic_number}")
 
                             if diff != -1:
                                 key_color = f"ds_diff_{diff}_colors" if opt == 0 else f"opt_diff_{diff}_colors"

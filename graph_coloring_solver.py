@@ -5,7 +5,7 @@ import matplotlib.cm as cm
 import numpy as np
 import time
 from exact_graph_coloring import *
-from DSATUR_graph_coloring import *
+from heuristic_graph_coloring import *
 
 
 def read_from_csv_file(filename):
@@ -41,7 +41,6 @@ def run_solving(graph, n, opt):
     print("------------------------------------")
     print(f"Start {type_alg} with diff {n}")
     print("------------------------------------")
-
     if opt == 1:
         chromatic_number, coloring = exact_graph_coloring(graph, n)
     else:
@@ -77,17 +76,17 @@ def main():
     if opt == 1:
         chromatic_number, coloring = exact_graph_coloring(graph, n)
     else:
-        chromatic_number, coloring = dsatur_graph_coloring(graph, n)
-        # coloring = nx.coloring.greedy_color(graph, strategy="DSATUR")
-        # coloring = {node: color + 1 for node, color in coloring.items()}
-        # chromatic_number = max(coloring.values())
+        chromatic_number, coloring = heuristic_graph_coloring(graph, n)
 
     color_map = generate_color_map(chromatic_number)
 
     print(f"The final number of colors is {chromatic_number}")
     print(f"coloring: {coloring}")
 
-    print_neighbors(graph)
+    color_counts = Counter(coloring.values())
+    print(f"max difference is {max(color_counts.values()) - min(color_counts.values())}")
+
+    #print_neighbors(graph)
     display_colored_graph(graph, coloring, color_map)
     #visualize_colors(color_map)
 

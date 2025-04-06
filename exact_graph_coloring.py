@@ -2,7 +2,7 @@ from tools import *
 import copy
 
 
-def balance_colors(counters, n_nodes, n):
+def balance_colors(counters, n_nodes, n, colors_sets):
     # optimisation by available colors
     colored_nodes = sum(counters)
     uncolored_nodes = n_nodes - colored_nodes
@@ -12,12 +12,28 @@ def balance_colors(counters, n_nodes, n):
     max_counter = max(counters)
 
     added = 0
+    needed = [0] * num_colors
     for i in range(num_colors):
         diff = max_counter - counters[i]
         diff_n = diff - n
         if diff_n > 0:
             added += diff_n
+            needed[i] = diff_n
         if added > uncolored_nodes:
+            return False
+
+    # Check if enough nodes can actually take the needed colors
+    available = {}
+    for color_set in colors_sets:
+        for color in color_set:
+            if color in available:
+                available[color] += 1
+            else:
+                available[color] = 1
+
+    for color_index in range(num_colors):
+        #print(f"needed: {needed[color_index]} for color {color_index + 1}, available: {available.get(color_index + 1, 0)}")
+        if needed[color_index] > available.get(color_index + 1, 0):
             return False
 
     return True
@@ -68,7 +84,7 @@ def backtrack_coloring(graph, node_index, max_colors, coloring, colors_sets, cou
         flag = True
         if n != -1:
             counters[color - 1] = counters[color - 1] + 1
-            if not balance_colors(counters, graph.number_of_nodes(), n):
+            if not balance_colors(counters, graph.number_of_nodes(), n, colors_sets):
                 counters[color - 1] = counters[color - 1] - 1
                 flag = False
 
