@@ -44,7 +44,7 @@ def run_solving(graph, n, opt):
     if opt == 1:
         chromatic_number, coloring = exact_graph_coloring(graph, n)
     else:
-        chromatic_number, coloring = dsatur_graph_coloring(graph, n)
+        chromatic_number, coloring = heuristic_graph_coloring(graph, n)
     print(f"The final number of colors is {chromatic_number}")
     return chromatic_number
 
@@ -84,9 +84,10 @@ def main():
     print(f"coloring: {coloring}")
 
     color_counts = Counter(coloring.values())
+    print(f"value: {max(color_counts.values())}, value: {min(color_counts.values())}")
     print(f"max difference is {max(color_counts.values()) - min(color_counts.values())}")
 
-    #print_neighbors(graph)
+    print_neighbors(graph)
     display_colored_graph(graph, coloring, color_map)
     #visualize_colors(color_map)
 
