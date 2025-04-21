@@ -55,6 +55,15 @@ def validate_number(value):
         raise argparse.ArgumentTypeError(f"Value must be greater than or equal to -1. You entered {int_value}.")
     return int_value
 
+def is_valid_coloring(graph, coloring):
+    for node in graph.nodes():
+        for neighbor in graph.neighbors(node):
+            if node in coloring and neighbor in coloring:
+                if coloring[node] == coloring[neighbor]:
+                    print(f"Invalid coloring: Node {node} and Node {neighbor} have the same color {coloring[node]}")
+                    return False
+    return True
+
 
 def main():
     parser = argparse.ArgumentParser(description="Load a graph from a CSV file.")
@@ -87,7 +96,11 @@ def main():
     print(f"value: {max(color_counts.values())}, value: {min(color_counts.values())}")
     print(f"max difference is {max(color_counts.values()) - min(color_counts.values())}")
 
-    print_neighbors(graph)
+    #print_neighbors(graph)
+    if is_valid_coloring(graph, coloring):
+        print("Coloring is valid: No neighbors share the same color.")
+    else:
+        print("Coloring is INVALID: Some neighbors share the same color.")
     display_colored_graph(graph, coloring, color_map)
     #visualize_colors(color_map)
 

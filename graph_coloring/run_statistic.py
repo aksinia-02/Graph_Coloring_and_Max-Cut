@@ -22,8 +22,8 @@ def load_or_create_dataframe(filename):
         "ds_diff_2_colors", "ds_diff_2_time", "opt_diff_2_colors", "opt_diff_2_time",
     ]
 
-    os.makedirs("output", exist_ok=True)
-    filename = f"output/{filename}"
+    os.makedirs("output_2", exist_ok=True)
+    filename = f"output_2/{filename}"
 
     if os.path.exists(filename):
         df = pd.read_csv(filename)
@@ -40,7 +40,10 @@ def run_with_timeout(graph, n, opt, timeout=120):
     result = [None]
 
     def target():
-        result[0] = run_solving(graph, n, opt)
+        if opt == 1:
+            result[0] = run_solving(graph, n, opt)
+        else:
+            return None
 
     thread = threading.Thread(target=target)
     thread.start()
@@ -58,7 +61,8 @@ def main():
     results = []
 
     for folder_name in sorted(os.listdir(data_folder)):
-        if folder_name not in ["n_30_p_10"]:
+        if folder_name not in ["n_30_p_30", "n_30_p_50"]:
+            #, "n_50_p_10", "n_50_p_30", "n_50_p_50"
             continue
         folder_path = os.path.join(data_folder, folder_name)
 
@@ -83,20 +87,10 @@ def main():
                         "name": file_name
                     }
 
+                    existing_rows = df[df["name"] == file_name]
+
                     for opt in range(0, 2):
-                        flag_timeout = True
                         for diff in range(-1, 3):
-                            if flag_timeout:
-                                start_time = time.time()
-                                chromatic_number = run_with_timeout(graph, diff, opt, timeout=180)
-                                end_time = time.time()
-                                execution_time = end_time - start_time
-                                if chromatic_number is None:
-                                    #flag_timeout = False
-                                    execution_time = None
-                            else:
-                                chromatic_number = None
-                                execution_time = None
 
                             if diff != -1:
                                 key_color = f"ds_diff_{diff}_colors" if opt == 0 else f"opt_diff_{diff}_colors"
@@ -105,6 +99,20 @@ def main():
                                 key_color = f"ds_colors" if opt == 0 else f"opt_colors"
                                 key_time = f"ds_time" if opt == 0 else f"opt_time"
 
+                            if not existing_rows.empty and pd.notna(existing_rows.iloc[0].get(key_color)) and pd.notna(
+                                    existing_rows.iloc[0].get(key_time)):
+                                print(f"Skipping {file_name}, opt={opt}, diff={diff} (already processed)")
+                                result_dict[key_color] = existing_rows.iloc[0][key_color]
+                                result_dict[key_time] = existing_rows.iloc[0][key_time]
+                                continue
+
+                            start_time = time.time()
+                            chromatic_number = run_with_timeout(graph, diff, opt, timeout=600)
+                            end_time = time.time()
+                            execution_time = end_time - start_time
+                            if chromatic_number is None:
+                                execution_time = None
+
                             result_dict[key_color] = chromatic_number
                             result_dict[key_time] = execution_time
 
@@ -112,7 +120,7 @@ def main():
 
     if results:
         df = pd.concat([df, pd.DataFrame(results)], ignore_index=True)
-        df.to_csv("output/output.csv", index=False)
+        df.to_csv("output_2/output.csv", index=False)
         print("Results saved to output.csv")
 
 
