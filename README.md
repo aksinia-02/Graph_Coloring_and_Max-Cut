@@ -17,12 +17,15 @@ Since erdos_renyi_graph can generate disconnected graphs, the random_graph_gener
 Generate the sparse random graphs.
 
 options:
+
   -h, --help            show this help message and exit
+  
   -n, --graphs GRAPHS   The number of graphs.
-  -nd, --nodes NODES [NODES ...]
-                        The number of nodes. You can use array or single value.
+  
+  -nd, --nodes NODES [NODES .... The number of nodes. You can use array or single value.
+  
   -p, --probabilities PROBABILITIES [PROBABILITIES ...]
-                        The probability that edge between between nodes exists. You can use array or single value between 0 and 1.
+  The probability that edge between between nodes exists. You can use array or single value between 0 and 1.
 
 
 ## Equitable Graph Coloring
