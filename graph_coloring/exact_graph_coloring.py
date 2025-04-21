@@ -1,9 +1,8 @@
-from tools import *
 import copy
 import Node
-from collections import Counter
 
-def balance_colors(counters, n_nodes, n, nodes):
+
+def balance_colors(counters, n_nodes, n, nodes, available):
     # optimisation by available colors
     colored_nodes = sum(counters)
     uncolored_nodes = n_nodes - colored_nodes
@@ -20,20 +19,17 @@ def balance_colors(counters, n_nodes, n, nodes):
             added += diff_n
             needed[i] = diff_n
         if added > uncolored_nodes:
-            #print(f"added {added}, uncolored_nodes {uncolored_nodes}")
+            # print(f"added {added}, uncolored_nodes {uncolored_nodes}")
             return False
 
-    #Check if enough nodes can actually take the needed colors
-    available = [0] * num_colors
-    for node in nodes.values():
-        for color in node.available_colors:
-            available[color - 1] += 1
+    # Check if enough nodes can actually take the needed colors
 
     for i in range(num_colors):
         if needed[i] > available[i]:
             return False
 
     return True
+
 
 def remove_color_from_neighbors(node, color, nodes):
     removed_colors_nodes = {}
@@ -75,16 +71,25 @@ def backtrack_coloring(node_index, max_colors, coloring, nodes, counters, n, ava
         del nodes[node.index]
 
         empty_found, removed_colors_nodes = remove_color_from_neighbors(node, color, nodes)
+        if n != -1:
+            available[color - 1] -= len(removed_colors_nodes)
 
         if empty_found:
             if n != -1:
                 counters[color - 1] -= 1
+                available[color - 1] += len(removed_colors_nodes)
             coloring.pop(node.index)
             nodes[backup_node.index] = backup_node
             continue
 
-        if n != -1 and not balance_colors(counters, len(coloring) + len(nodes), n, nodes):
+        if n != -1:
+            for available_color in backup_node.available_colors:
+                available[available_color - 1] -= 1
+
+        if n != -1 and not balance_colors(counters, len(coloring) + len(nodes), n, nodes, available):
             counters[color - 1] -= 1
+            for available_color in backup_node.available_colors:
+                available[available_color - 1] += 1
             coloring.pop(node.index)
             nodes[backup_node.index] = backup_node
 
@@ -92,6 +97,7 @@ def backtrack_coloring(node_index, max_colors, coloring, nodes, counters, n, ava
                 removed_node = nodes[removed_node_index]
                 removed_node.add_color(color)
                 removed_node.saturation -= 1
+            available[color - 1] += len(removed_colors_nodes)
             continue
 
         if backtrack_coloring(node_index + 1, max_colors, coloring, nodes, counters, n, available):
@@ -100,6 +106,8 @@ def backtrack_coloring(node_index, max_colors, coloring, nodes, counters, n, ava
         # Backtrack
         if n != -1:
             counters[color - 1] -= 1
+            for available_color in backup_node.available_colors:
+                available[available_color - 1] += 1
         coloring.pop(node.index)
         nodes[backup_node.index] = backup_node
 
@@ -107,15 +115,14 @@ def backtrack_coloring(node_index, max_colors, coloring, nodes, counters, n, ava
             removed_node = nodes[removed_node_index]
             removed_node.add_color(color)
             removed_node.saturation -= 1
+        available[color - 1] += len(removed_colors_nodes)
         if node_index == 0:
             return False
     return False
 
 
-#python .\graph_coloring_solver.py -f .\data\n_30_p_30\d_0.26_vKIe7vlm.csv -o 0 -n 0
-#python .\graph_coloring_solver.py -f .\data\n_200_p_10\d_0.1_1VGDCXqC.csv -o 1 -n 1
-
-
+# python .\graph_coloring_solver.py -f .\data\n_30_p_30\d_0.26_vKIe7vlm.csv -o 0 -n 0
+# python .\graph_coloring_solver.py -f .\data\n_200_p_10\d_0.1_1VGDCXqC.csv -o 1 -n 1
 
 
 def exact_graph_coloring(graph, n):
@@ -124,53 +131,70 @@ def exact_graph_coloring(graph, n):
     result = num_nodes
     final_coloring = {}
 
-    #
-    # for mid in range(1, num_nodes + 1):
-    #     color_sets = [set(range(1, mid + 1)) for _ in range(num_nodes)]
-    #     counters = [0] * mid if n != -1 else None
-    #     print(f"the number of colors is changed to {mid}")
-    #     nodes = {}
-    #     for i, node in enumerate(graph.nodes()):
-    #         neighbors = list(graph.neighbors(node))
-    #         nodes[node] = Node.Node(index=node, neighbors=neighbors, available_colors=color_sets[i])
-    #
-    #     coloring = {}
-    #
-    #     if backtrack_coloring(0, mid, coloring, nodes, counters, n):
-    #         final_coloring = coloring.copy()
-    #         color_counts = Counter(final_coloring.values())
-    #
-    #         # Display the counts
-    #         print("Color counts:")
-    #         for color in sorted(color_counts):
-    #             print(f"Color {color}: {color_counts[color]} nodes")
-    #         return mid, final_coloring
-    #     print(f"the coloring is NOT possible with {mid} colors")
 
-    while low <= high:
-        mid = (low + high) // 2
-        color_sets = [set(range(1, mid + 1)) for _ in range(num_nodes)]
-        counters = [0] * mid if n != -1 else None
-        print(f"the number of colors is changed to {mid}")
-        nodes = {}
-        for i, node in enumerate(graph.nodes()):
-            neighbors = list(graph.neighbors(node))
-            nodes[node] = Node.Node(index=node, neighbors=neighbors, available_colors=color_sets[i])
+    if n != -1:
 
-        coloring = {}
+        color_range = range(1, num_nodes + 1)
+        if n == 0:
+            numbers_col = []
+            for i in color_range:
+                if num_nodes % i == 0:
+                    numbers_col.append(i)
+            color_range = numbers_col
 
-        available = [0] * mid
-        for node in nodes.values():
-            for color in node.available_colors:
-                available[color - 1] += 1
+        for mid in color_range:
+            color_sets = [set(range(1, mid + 1)) for _ in range(num_nodes)]
+            counters = [0] * mid if n != -1 else None
+            print(f"the number of colors is changed to {mid}")
+            nodes = {}
+            for i, node in enumerate(graph.nodes()):
+                neighbors = list(graph.neighbors(node))
+                nodes[node] = Node.Node(index=node, neighbors=neighbors, available_colors=color_sets[i])
 
-        if backtrack_coloring(0, mid, coloring, nodes, counters, n, available):
-            result = mid
-            final_coloring = coloring.copy()
-            high = mid - 1
-            print(f"the coloring is possible with {mid} colors")
-        else:
-            low = mid + 1
+            coloring = {}
+
+            available = [0] * mid
+            for node in nodes.values():
+                for color in node.available_colors:
+                    available[color - 1] += 1
+
+            if backtrack_coloring(0, mid, coloring, nodes, counters, n, available):
+                final_coloring = coloring.copy()
+                # color_counts = Counter(final_coloring.values())
+
+                # Display the counts
+                # print("Color counts:")
+                # for color in sorted(color_counts):
+                #     print(f"Color {color}: {color_counts[color]} nodes")
+                print(f"the coloring is possible with {mid} colors")
+                return mid, final_coloring
             print(f"the coloring is NOT possible with {mid} colors")
+    else:
+
+        while low <= high:
+            mid = (low + high) // 2
+            color_sets = [set(range(1, mid + 1)) for _ in range(num_nodes)]
+            counters = [0] * mid if n != -1 else None
+            print(f"the number of colors is changed to {mid}")
+            nodes = {}
+            for i, node in enumerate(graph.nodes()):
+                neighbors = list(graph.neighbors(node))
+                nodes[node] = Node.Node(index=node, neighbors=neighbors, available_colors=color_sets[i])
+
+            coloring = {}
+
+            available = [0] * mid
+            for node in nodes.values():
+                for color in node.available_colors:
+                    available[color - 1] += 1
+
+            if backtrack_coloring(0, mid, coloring, nodes, counters, n, available):
+                result = mid
+                final_coloring = coloring.copy()
+                high = mid - 1
+                print(f"the coloring is possible with {mid} colors")
+            else:
+                low = mid + 1
+                print(f"the coloring is NOT possible with {mid} colors")
 
     return result, final_coloring
