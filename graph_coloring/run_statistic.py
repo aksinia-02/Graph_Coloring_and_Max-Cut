@@ -61,8 +61,7 @@ def main():
     results = []
 
     for folder_name in sorted(os.listdir(data_folder)):
-        if folder_name not in ["n_30_p_30", "n_30_p_50"]:
-            #, "n_50_p_10", "n_50_p_30", "n_50_p_50"
+        if folder_name not in ["n_50_p_50"]:
             continue
         folder_path = os.path.join(data_folder, folder_name)
 
@@ -75,6 +74,7 @@ def main():
 
                     graph = read_from_csv_file(file_name_full)
                     print("Graph loaded:", graph)
+                    print(f"name of file: {file_name}")
 
                     nodes = graph.number_of_nodes()
                     edges = graph.number_of_edges()

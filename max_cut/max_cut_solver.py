@@ -4,8 +4,9 @@ import networkx as nx
 import matplotlib.cm as cm
 import numpy as np
 import time
-from exact_graph_coloring import *
-from heuristic_graph_coloring import *
+from exact_max_cut import *
+from heuristic_max_cut import *
+from collections import Counter
 from tools import display_colored_graph
 
 
@@ -43,11 +44,11 @@ def run_solving(graph, n, opt):
     print(f"Start {type_alg} with diff {n}")
     print("------------------------------------")
     if opt == 1:
-        chromatic_number, coloring = exact_graph_coloring(graph, n)
-    else:
-        chromatic_number, coloring = heuristic_graph_coloring(graph, n)
-    print(f"The final number of colors is {chromatic_number}")
-    return chromatic_number
+        max_cut_size, best_partition = exact_max_cut(graph, n)
+    # else:
+    #     max_cut_size, best_partition = heuristic_max_cut(graph, n)
+    print(f"The final number of edges between sets is {max_cut_size}")
+    return best_partition
 
 
 def validate_number(value):
@@ -69,7 +70,7 @@ def is_valid_coloring(graph, coloring):
 def main():
     parser = argparse.ArgumentParser(description="Load a graph from a CSV file.")
     parser.add_argument("-f", "--file", type=str, required=True, help="Path to the CSV file.")
-    parser.add_argument("-n", "--number", type=validate_number, required=False, help="The number of difference for equitable coloring.")
+    parser.add_argument("-n", "--number", type=validate_number, required=False, help="The number of difference for bisectional cut.")
     parser.add_argument("-o", "--optimal", type=int, choices=[0, 1], required=True, help="Set to 1 if an optimal solution is required, otherwise 0 for a heuristic solution.")
 
     args = parser.parse_args()
@@ -84,25 +85,24 @@ def main():
     opt = args.optimal
 
     if opt == 1:
-        chromatic_number, coloring = exact_graph_coloring(graph, n)
+        best_partition, max_cut_size = exact_max_cut(graph, n)
+    #else:
+        #chromatic_number, coloring = heuristic_graph_coloring(graph, n)
+
+    color_map = generate_color_map(2)
+
+    print(f"The final number of edges between sets is {max_cut_size}")
+    print(f"best_partition: {best_partition}")
+
+    if best_partition is None:
+        print(f"Partition with diffrence {n} is impossible")
     else:
-        chromatic_number, coloring = heuristic_graph_coloring(graph, n)
-
-    color_map = generate_color_map(chromatic_number)
-
-    print(f"The final number of colors is {chromatic_number}")
-    print(f"coloring: {coloring}")
-
-    color_counts = Counter(coloring.values())
-    print(f"value: {max(color_counts.values())}, value: {min(color_counts.values())}")
-    print(f"max difference is {max(color_counts.values()) - min(color_counts.values())}")
+        nodes_counts = Counter(best_partition.values())
+        print(f"First set: {max(nodes_counts.values())}, second set: {min(nodes_counts.values())}")
+        print(f"Difference is {max(nodes_counts.values()) - min(nodes_counts.values())}")
 
     #print_neighbors(graph)
-    if is_valid_coloring(graph, coloring):
-        print("Coloring is valid: No neighbors share the same color.")
-    else:
-        print("Coloring is INVALID: Some neighbors share the same color.")
-    display_colored_graph(graph, coloring, color_map)
+        display_colored_graph(graph, best_partition, color_map)
     #visualize_colors(color_map)
 
 

@@ -1,10 +1,8 @@
-import networkx as nx
-import matplotlib.pyplot as plt
 import random
 import csv
 import string
 import math
-from tools import *
+from graph_coloring.tools import *
 import argparse
 import os
 

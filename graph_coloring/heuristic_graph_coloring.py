@@ -1,4 +1,3 @@
-from tools import *
 from collections import Counter
 
 
@@ -12,11 +11,12 @@ def get_next_uncolored_node(count_sat, count_deg):
 
     return candidates[0]
 
+
 def eq_colored(num_colors, n):
     max_col = max(num_colors.values())
     min_col = min(num_colors.values())
-
     return max_col - min_col <= n
+
 
 def calculate_freq(final_coloring, n):
     nodes_count = len(final_coloring)
@@ -26,6 +26,7 @@ def calculate_freq(final_coloring, n):
 
     is_equitable = eq_colored(color_counts, n)
     return is_equitable, result
+
 
 def heuristic_graph_coloring(graph, n):
     final_coloring = {}
@@ -108,7 +109,5 @@ def heuristic_graph_coloring(graph, n):
 
             eq_bool, freq = calculate_freq(final_coloring, n)
 
-
     chromatic_number = max(final_coloring.values())
-
     return chromatic_number, final_coloring

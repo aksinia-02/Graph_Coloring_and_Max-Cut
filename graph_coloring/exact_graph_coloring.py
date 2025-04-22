@@ -2,7 +2,7 @@ import copy
 import Node
 
 
-def balance_colors(counters, n_nodes, n, nodes, available):
+def balance_colors(counters, n_nodes, n, available):
     # optimisation by available colors
     colored_nodes = sum(counters)
     uncolored_nodes = n_nodes - colored_nodes
@@ -53,8 +53,8 @@ def get_next_uncolored_node(nodes):
     return max(nodes.values(), key=lambda n: (n.saturation, n.degree))
 
 
-def backtrack_coloring(node_index, max_colors, coloring, nodes, counters, n, available):
-    if node_index == len(coloring) + len(nodes):  # total nodes reached
+def backtrack_coloring_eq(node_index, max_colors, coloring, nodes, counters, n, available):
+    if node_index == len(coloring) + len(nodes):
         return True
 
     node = get_next_uncolored_node(nodes)
@@ -63,30 +63,26 @@ def backtrack_coloring(node_index, max_colors, coloring, nodes, counters, n, ava
     for color in colors:
 
         coloring[node.index] = color
-        if n != -1:
-            counters[color - 1] += 1
+        counters[color - 1] += 1
 
         # Backup structures
         backup_node = copy.deepcopy(node)
         del nodes[node.index]
 
         empty_found, removed_colors_nodes = remove_color_from_neighbors(node, color, nodes)
-        if n != -1:
-            available[color - 1] -= len(removed_colors_nodes)
+        available[color - 1] -= len(removed_colors_nodes)
 
         if empty_found:
-            if n != -1:
-                counters[color - 1] -= 1
-                available[color - 1] += len(removed_colors_nodes)
+            counters[color - 1] -= 1
+            available[color - 1] += len(removed_colors_nodes)
             coloring.pop(node.index)
             nodes[backup_node.index] = backup_node
             continue
 
-        if n != -1:
-            for available_color in backup_node.available_colors:
-                available[available_color - 1] -= 1
+        for available_color in backup_node.available_colors:
+            available[available_color - 1] -= 1
 
-        if n != -1 and not balance_colors(counters, len(coloring) + len(nodes), n, nodes, available):
+        if not balance_colors(counters, len(coloring) + len(nodes), n, available):
             counters[color - 1] -= 1
             for available_color in backup_node.available_colors:
                 available[available_color - 1] += 1
@@ -100,14 +96,13 @@ def backtrack_coloring(node_index, max_colors, coloring, nodes, counters, n, ava
             available[color - 1] += len(removed_colors_nodes)
             continue
 
-        if backtrack_coloring(node_index + 1, max_colors, coloring, nodes, counters, n, available):
+        if backtrack_coloring_eq(node_index + 1, max_colors, coloring, nodes, counters, n, available):
             return True
 
         # Backtrack
-        if n != -1:
-            counters[color - 1] -= 1
-            for available_color in backup_node.available_colors:
-                available[available_color - 1] += 1
+        counters[color - 1] -= 1
+        for available_color in backup_node.available_colors:
+            available[available_color - 1] += 1
         coloring.pop(node.index)
         nodes[backup_node.index] = backup_node
 
@@ -121,7 +116,45 @@ def backtrack_coloring(node_index, max_colors, coloring, nodes, counters, n, ava
     return False
 
 
-# python .\graph_coloring_solver.py -f .\data\n_30_p_30\d_0.26_vKIe7vlm.csv -o 0 -n 0
+def backtrack_coloring(node_index, coloring, nodes):
+    if node_index == len(coloring) + len(nodes):  # total nodes reached
+        return True
+
+    node = get_next_uncolored_node(nodes)
+    colors = list(node.available_colors)
+
+    for color in colors:
+
+        coloring[node.index] = color
+
+        # Backup structures
+        backup_node = copy.deepcopy(node)
+        del nodes[node.index]
+
+        empty_found, removed_colors_nodes = remove_color_from_neighbors(node, color, nodes)
+
+        if empty_found:
+            coloring.pop(node.index)
+            nodes[backup_node.index] = backup_node
+            continue
+
+        if backtrack_coloring(node_index + 1, coloring, nodes):
+            return True
+
+        # Backtrack
+        coloring.pop(node.index)
+        nodes[backup_node.index] = backup_node
+
+        for removed_node_index in removed_colors_nodes:
+            removed_node = nodes[removed_node_index]
+            removed_node.add_color(color)
+            removed_node.saturation -= 1
+        if node_index == 0:
+            return False
+    return False
+
+
+# python .\graph_coloring_solver.py -f ..\data\n_30_p_30\d_0.26_vKIe7vlm.csv -o 0 -n 0
 # python .\graph_coloring_solver.py -f .\data\n_200_p_10\d_0.1_1VGDCXqC.csv -o 1 -n 1
 
 
@@ -158,14 +191,8 @@ def exact_graph_coloring(graph, n):
                 for color in node.available_colors:
                     available[color - 1] += 1
 
-            if backtrack_coloring(0, mid, coloring, nodes, counters, n, available):
+            if backtrack_coloring_eq(0, mid, coloring, nodes, counters, n, available):
                 final_coloring = coloring.copy()
-                # color_counts = Counter(final_coloring.values())
-
-                # Display the counts
-                # print("Color counts:")
-                # for color in sorted(color_counts):
-                #     print(f"Color {color}: {color_counts[color]} nodes")
                 print(f"the coloring is possible with {mid} colors")
                 return mid, final_coloring
             print(f"the coloring is NOT possible with {mid} colors")
@@ -188,7 +215,7 @@ def exact_graph_coloring(graph, n):
                 for color in node.available_colors:
                     available[color - 1] += 1
 
-            if backtrack_coloring(0, mid, coloring, nodes, counters, n, available):
+            if backtrack_coloring(0, coloring, nodes):
                 result = mid
                 final_coloring = coloring.copy()
                 high = mid - 1
