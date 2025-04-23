@@ -4,9 +4,9 @@ import networkx as nx
 import matplotlib.cm as cm
 import numpy as np
 import time
-from exact_graph_coloring import *
-from heuristic_graph_coloring import *
-from tools import display_colored_graph
+from graph_coloring.exact_graph_coloring import *
+from graph_coloring.heuristic_graph_coloring import *
+from graph_coloring.tools import display_colored_graph
 
 
 def read_from_csv_file(filename):
@@ -37,16 +37,18 @@ def generate_color_map(m):
     return color_map
 
 
-def run_solving(graph, n, opt):
+def run_solving_graph_coloring(graph, n, opt):
     type_alg = "exact" if opt == 1 else "heuristic"
     print("------------------------------------")
     print(f"Start {type_alg} with diff {n}")
     print("------------------------------------")
+    start_time = time.time()
     if opt == 1:
         chromatic_number, coloring = exact_graph_coloring(graph, n)
     else:
         chromatic_number, coloring = heuristic_graph_coloring(graph, n)
     print(f"The final number of colors is {chromatic_number}")
+    print(f"Execution time: {time.time() - start_time:.2f} seconds")
     return chromatic_number
 
 

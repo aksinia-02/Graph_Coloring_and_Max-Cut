@@ -1,10 +1,6 @@
 from itertools import product
 from collections import Counter
-
-
-def calculate_cut_size(graph, partition):
-    cut = [(u, v) for u, v in graph.edges() if partition[u] != partition[v]]
-    return len(cut), cut
+from max_cut.tools import calculate_cut_size
 
 
 def invalid_partition_check_eq(partition, n):

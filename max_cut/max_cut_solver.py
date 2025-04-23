@@ -3,11 +3,10 @@ import csv
 import networkx as nx
 import matplotlib.cm as cm
 import numpy as np
-import time
-from exact_max_cut import *
-from heuristic_max_cut import *
+from max_cut.exact_max_cut import *
+from max_cut.heuristic_max_cut import *
 from collections import Counter
-from tools import display_colored_graph
+from max_cut.tools import display_colored_graph
 
 
 def read_from_csv_file(filename):
@@ -38,15 +37,15 @@ def generate_color_map(m):
     return color_map
 
 
-def run_solving(graph, n, opt):
+def run_solving_max_cut(graph, n, opt):
     type_alg = "exact" if opt == 1 else "heuristic"
     print("------------------------------------")
     print(f"Start {type_alg} with diff {n}")
     print("------------------------------------")
     if opt == 1:
         max_cut_size, best_partition = exact_max_cut(graph, n)
-    # else:
-    #     max_cut_size, best_partition = heuristic_max_cut(graph, n)
+    else:
+        max_cut_size, best_partition = iterative_max_cut(graph, n)
     print(f"The final number of edges between sets is {max_cut_size}")
     return best_partition
 
@@ -56,15 +55,6 @@ def validate_number(value):
     if int_value < -1:
         raise argparse.ArgumentTypeError(f"Value must be greater than or equal to -1. You entered {int_value}.")
     return int_value
-
-def is_valid_coloring(graph, coloring):
-    for node in graph.nodes():
-        for neighbor in graph.neighbors(node):
-            if node in coloring and neighbor in coloring:
-                if coloring[node] == coloring[neighbor]:
-                    print(f"Invalid coloring: Node {node} and Node {neighbor} have the same color {coloring[node]}")
-                    return False
-    return True
 
 
 def main():
@@ -86,8 +76,8 @@ def main():
 
     if opt == 1:
         best_partition, max_cut_size = exact_max_cut(graph, n)
-    #else:
-        #chromatic_number, coloring = heuristic_graph_coloring(graph, n)
+    else:
+        best_partition, max_cut_size = iterative_max_cut(graph, n)
 
     color_map = generate_color_map(2)
 
@@ -95,7 +85,7 @@ def main():
     print(f"best_partition: {best_partition}")
 
     if best_partition is None:
-        print(f"Partition with diffrence {n} is impossible")
+        print(f"Partition with difference {n} is impossible")
     else:
         nodes_counts = Counter(best_partition.values())
         print(f"First set: {max(nodes_counts.values())}, second set: {min(nodes_counts.values())}")

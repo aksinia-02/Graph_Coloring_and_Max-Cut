@@ -1,6 +1,10 @@
 import matplotlib.pyplot as plt
 import networkx as nx
 
+def calculate_cut_size(graph, partition):
+    cut = [(u, v) for u, v in graph.edges() if partition[u] != partition[v]]
+    return len(cut), cut
+
 def display_graph(G):
     plt.figure(figsize=(6, 6))
     nx.draw(G, with_labels=True, node_color='lightblue', edge_color='gray', node_size=500)

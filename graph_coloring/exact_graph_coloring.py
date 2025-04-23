@@ -1,5 +1,13 @@
 import copy
-import Node
+from graph_coloring.Node import Node
+
+
+def cal_density(G):
+    num_nodes = G.number_of_nodes()
+    num_edges = G.number_of_edges()
+    density = 2 * num_edges / num_nodes / (num_nodes - 1)
+
+    return density
 
 
 def balance_colors(counters, n_nodes, n, available):
@@ -95,7 +103,6 @@ def backtrack_coloring_eq(node_index, max_colors, coloring, nodes, counters, n, 
                 removed_node.saturation -= 1
             available[color - 1] += len(removed_colors_nodes)
             continue
-
         if backtrack_coloring_eq(node_index + 1, max_colors, coloring, nodes, counters, n, available):
             return True
 
@@ -112,6 +119,8 @@ def backtrack_coloring_eq(node_index, max_colors, coloring, nodes, counters, n, 
             removed_node.saturation -= 1
         available[color - 1] += len(removed_colors_nodes)
         if node_index == 0:
+            # print(f"available: {available}")
+            # print(f"nodes: {len(nodes)}")
             return False
     return False
 
@@ -164,8 +173,15 @@ def exact_graph_coloring(graph, n):
     result = num_nodes
     final_coloring = {}
 
+    small = 1 if num_nodes < 50 else 0
+    eq = 1 if n != -1 else 0
+    points = cal_density(graph) * 0.5 + small * 0.3 + eq * 0.2
+    print(f"POints: {points}")
 
-    if n != -1:
+
+
+    if points > 0.5 or n == 0:
+        print("Iterative search is used")
 
         color_range = range(1, num_nodes + 1)
         if n == 0:
@@ -182,7 +198,7 @@ def exact_graph_coloring(graph, n):
             nodes = {}
             for i, node in enumerate(graph.nodes()):
                 neighbors = list(graph.neighbors(node))
-                nodes[node] = Node.Node(index=node, neighbors=neighbors, available_colors=color_sets[i])
+                nodes[node] = Node(index=node, neighbors=neighbors, available_colors=color_sets[i])
 
             coloring = {}
 
@@ -190,14 +206,18 @@ def exact_graph_coloring(graph, n):
             for node in nodes.values():
                 for color in node.available_colors:
                     available[color - 1] += 1
+            if n != -1:
+                success = backtrack_coloring_eq(0, mid, coloring, nodes, counters, n, available)
+            else:
+                success = backtrack_coloring(0, coloring, nodes)
 
-            if backtrack_coloring_eq(0, mid, coloring, nodes, counters, n, available):
+            if success:
                 final_coloring = coloring.copy()
-                print(f"the coloring is possible with {mid} colors")
+                print(f"The coloring is possible with {mid} colors")
                 return mid, final_coloring
             print(f"the coloring is NOT possible with {mid} colors")
     else:
-
+        print("Binary search is used")
         while low <= high:
             mid = (low + high) // 2
             color_sets = [set(range(1, mid + 1)) for _ in range(num_nodes)]
@@ -206,7 +226,7 @@ def exact_graph_coloring(graph, n):
             nodes = {}
             for i, node in enumerate(graph.nodes()):
                 neighbors = list(graph.neighbors(node))
-                nodes[node] = Node.Node(index=node, neighbors=neighbors, available_colors=color_sets[i])
+                nodes[node] = Node(index=node, neighbors=neighbors, available_colors=color_sets[i])
 
             coloring = {}
 
@@ -215,11 +235,16 @@ def exact_graph_coloring(graph, n):
                 for color in node.available_colors:
                     available[color - 1] += 1
 
-            if backtrack_coloring(0, coloring, nodes):
+            if n != -1:
+                success = backtrack_coloring_eq(0, mid, coloring, nodes, counters, n, available)
+            else:
+                success = backtrack_coloring(0, coloring, nodes)
+
+            if success:
                 result = mid
                 final_coloring = coloring.copy()
                 high = mid - 1
-                print(f"the coloring is possible with {mid} colors")
+                print(f"The coloring is possible with {mid} colors")
             else:
                 low = mid + 1
                 print(f"the coloring is NOT possible with {mid} colors")

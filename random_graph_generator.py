@@ -50,27 +50,29 @@ def cal_density_and_rem_adges(G):
 
     return density, rem_edges
 
-def generate_random_graph(nodes, p):
+def generate_random_graph(nodes, p, s):
     G = nx.erdos_renyi_graph(nodes, p)
 
     if not nx.is_connected(G):
         G = connect_disconnected_components(G)
 
-    density, rem_edges = cal_density_and_rem_adges(G)
+    if s == 1:
 
-    if rem_edges is not None:
-        remove_random_edges(G, rem_edges)
+        density, rem_edges = cal_density_and_rem_adges(G)
+
+        if rem_edges is not None:
+            remove_random_edges(G, rem_edges)
 
     return G
 
-def save_into_csv_file(G, p):
+def save_into_csv_file(G, p, f):
     """Save the adjacency matrix of graph G into a CSV file."""
     n = G.number_of_nodes()
     density, _ = cal_density_and_rem_adges(G)
     density = round(density, 2)
 
     random_key = generate_random_key()
-    dir_path = f"data/n_{n}_p_{int(p * 100)}"
+    dir_path = f"{f}/n_{n}_p_{int(p * 100)}"
     os.makedirs(dir_path, exist_ok=True)
     filename = f"{dir_path}/d_{density}_{random_key}.csv"
 
@@ -88,21 +90,29 @@ def save_into_csv_file(G, p):
 
     print(f"New file {filename}")
 
-def generate_and_save_n_graphs(n, num_nodes, p):
+def generate_and_save_n_graphs(n, num_nodes, p, s, f):
     for _ in range(0, n):
-        sparse_graph = generate_random_graph(num_nodes, p)
-        save_into_csv_file(sparse_graph, p)
+        sparse_graph = generate_random_graph(num_nodes, p, s)
+        save_into_csv_file(sparse_graph, p, f)
+
+# python .\random_graph_generator.py -n 10 -nd 10 20 30 40 50 60 70 80 100 -p 0.6 0.8 1 -s 0 -f data_dense
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate the sparse random graphs.")
+    parser = argparse.ArgumentParser(description="Generate some random graphs.")
     parser.add_argument("-n", "--graphs", type=int, required=True, help="The number of graphs.")
     parser.add_argument("-nd", "--nodes", type=int, required=True, nargs="+",
                         help="The number of nodes. You can use array or single value.")
     parser.add_argument("-p", "--probabilities", type=float, required=True, nargs="+",
                         help="The probability that edge between between nodes exists. You can use array or single value between 0 and 1.")
+    parser.add_argument("-s", "--sparse", type=int, choices=[0, 1], required=True, help="Set to 1 if sparse graphs are required, otherwise 0 for any graph.")
+    parser.add_argument("-f", "--folder_name", type=str, required=True,
+                        help="Folder name.")
 
     args = parser.parse_args()
     print(args)
+
+    s = args.sparse
+    f = args.folder_name
 
     for p in args.probabilities:
         if (p < 0) or (p > 1):
@@ -111,7 +121,7 @@ def main():
 
     for nd in args.nodes:
         for p in args.probabilities:
-            generate_and_save_n_graphs(args.graphs, nd, p)
+            generate_and_save_n_graphs(args.graphs, nd, p, s, f)
 
 if __name__ == "__main__":
     main()
