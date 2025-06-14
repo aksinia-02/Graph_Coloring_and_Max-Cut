@@ -25,4 +25,4 @@ def iterative_max_cut(graph, max_iterations=1000):
 
     partition = {node: value + 1 for node, value in partition.items()}
 
-    return partition, current_cut_size
+    return current_cut_size, partition

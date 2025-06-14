@@ -7,7 +7,7 @@ def display_graph(G):
     plt.show()
 
 
-def display_colored_graph(G, coloring, color_map):
+def display_colored_graph(G, coloring, color_map, output_file="graph.html"):
     """Display the graph with nodes colored based on the assigned coloring."""
 
     node_colors = [color_map[coloring.get(node, 1)] for node in G.nodes()]

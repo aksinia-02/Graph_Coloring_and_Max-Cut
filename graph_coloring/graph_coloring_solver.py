@@ -3,10 +3,12 @@ import csv
 import networkx as nx
 import matplotlib.cm as cm
 import numpy as np
-import time
 from graph_coloring.exact_graph_coloring import *
 from graph_coloring.heuristic_graph_coloring import *
 from graph_coloring.tools import display_colored_graph
+
+## python -m graph_coloring.graph_coloring_solver -f .\data_sparse\n_30_p_30\d_0.25_bIfpiUf1.csv -o 1 -n 1
+
 
 
 def read_from_csv_file(filename):
@@ -42,13 +44,11 @@ def run_solving_graph_coloring(graph, n, opt):
     print("------------------------------------")
     print(f"Start {type_alg} with diff {n}")
     print("------------------------------------")
-    start_time = time.time()
     if opt == 1:
         chromatic_number, coloring = exact_graph_coloring(graph, n)
     else:
         chromatic_number, coloring = heuristic_graph_coloring(graph, n)
     print(f"The final number of colors is {chromatic_number}")
-    print(f"Execution time: {time.time() - start_time:.2f} seconds")
     return chromatic_number
 
 
@@ -57,6 +57,7 @@ def validate_number(value):
     if int_value < -1:
         raise argparse.ArgumentTypeError(f"Value must be greater than or equal to -1. You entered {int_value}.")
     return int_value
+
 
 def is_valid_coloring(graph, coloring):
     for node in graph.nodes():

@@ -27,10 +27,12 @@ def calculate_freq(final_coloring, n):
     is_equitable = eq_colored(color_counts, n)
     return is_equitable, result
 
+def color_equitable():
+    pass
+
 
 def heuristic_graph_coloring(graph, n):
     final_coloring = {}
-    # final_coloring = {node: 1 for node in graph.nodes()}
     nodes = graph.nodes()
     count_sat = {node: 0 for node in nodes}
     count_deg = {node: len(list(graph.neighbors(node))) for node in nodes}
@@ -70,7 +72,12 @@ def heuristic_graph_coloring(graph, n):
                 neighbor_colors[neighbor].add(color)
 
     if n != -1:
+        color_equitable()
         eq_bool, freq = calculate_freq(final_coloring, n)
+
+        last_min_freq_color = None
+        last_max_freq_color = None
+        last_changed_node = None
 
         while not eq_bool:
             max_freq = max(freq.values())
@@ -85,10 +92,14 @@ def heuristic_graph_coloring(graph, n):
                 if color == max_freq_color:
                     neighbor_colors = {final_coloring[neighbor] for neighbor in graph.neighbors(node) if
                                        neighbor in final_coloring}
+                    if (last_min_freq_color == max_freq_color and last_max_freq_color == min_freq_color and last_changed_node == node):
+                        continue
                     if min_freq_color not in neighbor_colors:
                         final_coloring[node] = min_freq_color
-                        freq[max_freq_color] -= 1
-                        freq[min_freq_color] += 1
+                        #print(f"Node {node} has color {color}")
+                        last_min_freq_color = min_freq_color
+                        last_max_freq_color = max_freq_color
+                        last_changed_node = node
                         candidate_found = True
                         break
 
@@ -96,15 +107,10 @@ def heuristic_graph_coloring(graph, n):
             if not candidate_found:
                 for node, color in final_coloring.items():
                     if color == max_freq_color:
-                        neighbor_colors = {final_coloring[neighbor] for neighbor in graph.neighbors(node) if
-                                           neighbor in final_coloring}
-                        new_color = max(freq.keys()) + 1
-                        # Make sure new_color is not used by neighbors
-                        while new_color in neighbor_colors:
-                            new_color += 1
+                        new_color = max(final_coloring.values()) + 1
+                        #print(f"New number of colors: {new_color}")
                         final_coloring[node] = new_color
-                        freq[max_freq_color] -= 1
-                        freq[new_color] = 1
+                        #print(f"Change for node: {node}, color: {color}")
                         break
 
             eq_bool, freq = calculate_freq(final_coloring, n)

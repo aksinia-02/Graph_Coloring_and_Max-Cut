@@ -61,7 +61,7 @@ def get_next_uncolored_node(nodes):
     return max(nodes.values(), key=lambda n: (n.saturation, n.degree))
 
 
-def backtrack_coloring_eq(node_index, max_colors, coloring, nodes, counters, n, available):
+def backtrack_coloring_eq(node_index, coloring, nodes, counters, n, available):
     if node_index == len(coloring) + len(nodes):
         return True
 
@@ -103,7 +103,7 @@ def backtrack_coloring_eq(node_index, max_colors, coloring, nodes, counters, n, 
                 removed_node.saturation -= 1
             available[color - 1] += len(removed_colors_nodes)
             continue
-        if backtrack_coloring_eq(node_index + 1, max_colors, coloring, nodes, counters, n, available):
+        if backtrack_coloring_eq(node_index + 1, coloring, nodes, counters, n, available):
             return True
 
         # Backtrack
@@ -175,10 +175,7 @@ def exact_graph_coloring(graph, n):
 
     small = 1 if num_nodes < 50 else 0
     eq = 1 if n != -1 else 0
-    points = cal_density(graph) * 0.5 + small * 0.3 + eq * 0.2
-    print(f"POints: {points}")
-
-
+    points = cal_density(graph) * 0.6 + small * 0.15 + eq * 0.25
 
     if points > 0.5 or n == 0:
         print("Iterative search is used")

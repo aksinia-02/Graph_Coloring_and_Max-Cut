@@ -43,11 +43,19 @@ def run_solving_max_cut(graph, n, opt):
     print(f"Start {type_alg} with diff {n}")
     print("------------------------------------")
     if opt == 1:
-        max_cut_size, best_partition = exact_max_cut(graph, n)
+        best_partition, max_cut_size = exact_max_cut(graph, n)
     else:
-        max_cut_size, best_partition = iterative_max_cut(graph, n)
+        best_partition, max_cut_size = iterative_max_cut(graph, n)
     print(f"The final number of edges between sets is {max_cut_size}")
-    return best_partition
+    print(f"best_partition: {best_partition}")
+
+    if best_partition is None:
+        print(f"Partition with difference {n} is impossible")
+    else:
+        nodes_counts = Counter(best_partition.values())
+        print(f"First set: {max(nodes_counts.values())}, second set: {min(nodes_counts.values())}")
+        print(f"Difference is {max(nodes_counts.values()) - min(nodes_counts.values())}")
+    return max_cut_size
 
 
 def validate_number(value):
@@ -62,7 +70,6 @@ def main():
     parser.add_argument("-f", "--file", type=str, required=True, help="Path to the CSV file.")
     parser.add_argument("-n", "--number", type=validate_number, required=False, help="The number of difference for bisectional cut.")
     parser.add_argument("-o", "--optimal", type=int, choices=[0, 1], required=True, help="Set to 1 if an optimal solution is required, otherwise 0 for a heuristic solution.")
-
     args = parser.parse_args()
     print(args)
 
