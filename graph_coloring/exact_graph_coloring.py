@@ -204,7 +204,7 @@ def exact_graph_coloring(graph, n):
                 for color in node.available_colors:
                     available[color - 1] += 1
             if n != -1:
-                success = backtrack_coloring_eq(0, mid, coloring, nodes, counters, n, available)
+                success = backtrack_coloring_eq(0, coloring, nodes, counters, n, available)
             else:
                 success = backtrack_coloring(0, coloring, nodes)
 

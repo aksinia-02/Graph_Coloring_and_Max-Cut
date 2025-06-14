@@ -1,5 +1,9 @@
 import random
-from max_cut.tools import calculate_cut_size
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import tools
+from tools import calculate_cut_size
 
 
 def iterative_max_cut(graph, max_iterations=1000):
@@ -25,4 +29,4 @@ def iterative_max_cut(graph, max_iterations=1000):
 
     partition = {node: value + 1 for node, value in partition.items()}
 
-    return current_cut_size, partition
+    return partition, current_cut_size

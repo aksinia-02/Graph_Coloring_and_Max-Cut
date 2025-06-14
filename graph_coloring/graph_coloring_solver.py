@@ -1,54 +1,71 @@
 import argparse
-import csv
-import networkx as nx
-import matplotlib.cm as cm
-import numpy as np
 from graph_coloring.exact_graph_coloring import *
 from graph_coloring.heuristic_graph_coloring import *
-from graph_coloring.tools import display_colored_graph
+import os
+import json
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import tools
+from tools import display_colored_graph
+from tools import generate_color_map
+from tools import read_from_csv_file
 
 ## python -m graph_coloring.graph_coloring_solver -f .\data_sparse\n_30_p_30\d_0.25_bIfpiUf1.csv -o 1 -n 1
 
 
-
-def read_from_csv_file(filename):
-    with open(filename, mode='r', newline='') as file:
-        reader = csv.reader(file)
-        nodes = next(reader)
-        adj_matrix = [list(map(int, row)) for row in reader]
-
-    graph = nx.Graph()
-    graph.add_nodes_from(nodes)
-
-    for i, row in enumerate(adj_matrix):
-        for j, value in enumerate(row):
-            if value:
-                graph.add_edge(nodes[i], nodes[j])
-
-    return graph
-
-
-def generate_color_map(m):
-    """Generate m distinct colors using a colormap."""
-    colors = cm.rainbow(np.linspace(0, 1, m))  # Get m colors from the rainbow colormap
-    color_map = {i + 1: "#{:02x}{:02x}{:02x}".format(
-        int(colors[i][0] * 255),
-        int(colors[i][1] * 255),
-        int(colors[i][2] * 255)
-    ) for i in range(m)}
-    return color_map
-
-
-def run_solving_graph_coloring(graph, n, opt):
+def run_solving_graph_coloring(graph, n, opt, full_file_path, visualization=False):
     type_alg = "exact" if opt == 1 else "heuristic"
     print("------------------------------------")
     print(f"Start {type_alg} with diff {n}")
     print("------------------------------------")
-    if opt == 1:
-        chromatic_number, coloring = exact_graph_coloring(graph, n)
+
+    base_name = os.path.basename(full_file_path)
+    json_name = base_name.replace(".csv", "")
+    suffix = "_h" if opt == 0 else "_o"
+    if n != -1:
+        json_name = f"{json_name}{suffix}_n_{n}_coloring.json"
     else:
-        chromatic_number, coloring = heuristic_graph_coloring(graph, n)
+        json_name = f"{json_name}{suffix}_n_None_coloring.json"
+    output_path = os.path.join(os.path.dirname(full_file_path), json_name)
+
+    coloring = None
+    chromatic_number = None
+
+    if os.path.exists(output_path):
+        print(f"Found existing coloring file: {output_path}. Loading coloring.")
+        with open(output_path, "r") as f:
+            coloring = json.load(f)
+
+        chromatic_number = max(coloring.values()) if coloring else None
+
+    else:
+        if opt == 1:
+            chromatic_number, coloring = exact_graph_coloring(graph, n)
+        else:
+            chromatic_number, coloring = heuristic_graph_coloring(graph, n)
+        with open(output_path, "w") as f:
+            json.dump(coloring, f, indent=4)
+        print("------------------------------------")
+        print(f"Coloring is saved to {output_path}")
+
+    print("------------------------------------")
     print(f"The final number of colors is {chromatic_number}")
+
+    color_counts = Counter(coloring.values())
+    print(f"Max color class: {max(color_counts.values())}, Min color class: {min(color_counts.values())},"
+          f" Color classes difference is {max(color_counts.values()) - min(color_counts.values())}")
+
+    print("------------------------------------")
+    if is_valid_coloring(graph, coloring):
+        print("Coloring is VALID: No neighbors share the same color.")
+    else:
+        print("Coloring is INVALID: Some neighbors share the same color.")
+    print("------------------------------------")
+
+    if visualization:
+        color_map = generate_color_map(chromatic_number)
+        display_colored_graph(graph, coloring, color_map)
+
     return chromatic_number
 
 
@@ -86,27 +103,7 @@ def main():
     n = args.number if args.number is not None else -1
     opt = args.optimal
 
-    if opt == 1:
-        chromatic_number, coloring = exact_graph_coloring(graph, n)
-    else:
-        chromatic_number, coloring = heuristic_graph_coloring(graph, n)
-
-    color_map = generate_color_map(chromatic_number)
-
-    print(f"The final number of colors is {chromatic_number}")
-    print(f"coloring: {coloring}")
-
-    color_counts = Counter(coloring.values())
-    print(f"value: {max(color_counts.values())}, value: {min(color_counts.values())}")
-    print(f"max difference is {max(color_counts.values()) - min(color_counts.values())}")
-
-    #print_neighbors(graph)
-    if is_valid_coloring(graph, coloring):
-        print("Coloring is valid: No neighbors share the same color.")
-    else:
-        print("Coloring is INVALID: Some neighbors share the same color.")
-    display_colored_graph(graph, coloring, color_map)
-    #visualize_colors(color_map)
+    run_solving_graph_coloring(graph, n, opt, filename, visualization=True)
 
 
 if __name__ == "__main__":

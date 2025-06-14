@@ -4,6 +4,10 @@ from max_cut.max_cut_solver import *
 import pandas as pd
 import time
 import multiprocessing
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from tools import read_from_csv_file
 
 # .\venv\Scripts\Activate
 
@@ -42,18 +46,18 @@ def load_or_create_dataframe(filename, type):
 
     return df
 
-def target_func(result, type, graph, n, opt):
+def target_func(result, type, graph, n, opt, folder_path):
     if type == 1:
-        result[0] = run_solving_graph_coloring(graph, n, opt)
+        result[0] = run_solving_graph_coloring(graph, n, opt, folder_path)
     else:
-        result[0] = run_solving_max_cut(graph, n, opt)
+        result[0] = run_solving_max_cut(graph, n, opt, folder_path)
 
 
-def run_with_timeout(type, graph, n, opt, timeout=120):
+def run_with_timeout(type, graph, n, opt, timeout=120, full_file_path=None):
     manager = multiprocessing.Manager()
     result = manager.list([None])
 
-    process = multiprocessing.Process(target=target_func, args=(result, type, graph, n, opt))
+    process = multiprocessing.Process(target=target_func, args=(result, type, graph, n, opt, full_file_path))
     process.start()
     process.join(timeout)
 
@@ -89,7 +93,7 @@ def main():
     results = []
 
     process = "Coloring" if type == 1 else "Max Cut Size"
-    print(f"Finding: {process}")
+    print(f"Start: {process}")
 
     folder_file_count = 0
     counter = 0
@@ -111,6 +115,7 @@ def main():
         if os.path.isdir(folder_path):
             for file_name in sorted(os.listdir(folder_path)):
                 file_path = os.path.join(folder_path, file_name)
+                print(file_path)
 
                 if os.path.isfile(file_path):
                     file_name_full = f"{data_folder}/{folder_name}/{file_name}"
@@ -155,18 +160,22 @@ def main():
 
                         if type == 1:
                             start_time = time.time()
-                            chromatic_number = run_with_timeout(type, graph, diff, opt, timeout=1800)
+                            chromatic_number = run_with_timeout(
+                                type, graph, diff, opt, timeout=3600, full_file_path=file_path
+                            )
                             end_time = time.time()
-                            execution_time = end_time - start_time
+                            execution_time = (end_time - start_time) / 60
                             if chromatic_number is None:
                                 execution_time = None
                             result_dict[key_color_cut] = chromatic_number
                             result_dict[key_time] = execution_time
                         else:
                             start_time = time.time()
-                            cut_size = run_with_timeout(type, graph, diff, opt, timeout=1800)
+                            cut_size = run_with_timeout(
+                                type, graph, diff, opt, timeout=3600, full_file_path=file_path
+                            )
                             end_time = time.time()
-                            execution_time = end_time - start_time
+                            execution_time = (end_time - start_time) / 60
                             if cut_size is None:
                                 execution_time = None
                             result_dict[key_color_cut] = cut_size
@@ -178,7 +187,7 @@ def main():
     if results:
         df = pd.concat([df, pd.DataFrame(results)], ignore_index=True)
         df.to_csv(f"output/{output_file}", index=False)
-        print(f"Results saved to output/{output_file}")
+        print(f"Results saved to output/{output_file}\n\n")
 
 
 if __name__ == "__main__":

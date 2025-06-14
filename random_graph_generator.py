@@ -2,13 +2,17 @@ import random
 import csv
 import string
 import math
-from graph_coloring.tools import *
+from tools import *
 import argparse
 import os
 
 
 def generate_random_key(length=8):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+
+def generate_random_seed():
+    seed = random.randint(0, 2 ** 32 - 1)
+    return seed
 
 
 def connect_disconnected_components(G):
@@ -43,7 +47,7 @@ def generate_random_graph(nodes, p=None, val_2=None):
         except ValueError:
             continue
 
-    G = nx.erdos_renyi_graph(nodes, p)
+    G = nx.erdos_renyi_graph(nodes, p, seed=generate_random_seed())
 
     if not nx.is_connected(G):
         G = connect_disconnected_components(G)
@@ -60,7 +64,7 @@ def generate_scale_free_graph(n, m=None, val_2=None):
             m = int(input(f"Invalid number of nodes! Enter a value > 0 and > {n - 1}: "))
         except ValueError:
             continue
-    return m, None, nx.barabasi_albert_graph(n, m)
+    return m, None, nx.barabasi_albert_graph(n, m, seed=generate_random_seed())
 
 
 # Create graphs with high clustering and short path lengths
@@ -79,7 +83,7 @@ def generate_small_world_graph(n, k=None, p=None):
             p = float(input("Invalid probability! Enter a value between 0 and 1: "))
         except ValueError:
             continue
-    return k, p, nx.watts_strogatz_graph(n, k, p)
+    return k, p, nx.watts_strogatz_graph(n, k, p, seed=generate_random_seed())
 
 
 # 2D grid graphs, which are planar and useful for certain coloring problems
@@ -111,10 +115,10 @@ def generate_complete_bipartite_graph(nodes, n1=None, n2=None):
         except ValueError:
             continue
     if n2 is None:
-        n2 = int(input("Enter number of nodes in first partition range(n1, n1 + n2), n2 > 0: "))
+        n2 = int(input("Enter number of nodes in second partition range(n1, n1 + n2), n2 > 0: "))
     while not isinstance(n2, int) or n2 <= 0:
         try:
-            n2 = int(input(f"Invalid input! Enter number of nodes in first partition range(n1, n1 + n2), n2 > 0: "))
+            n2 = int(input(f"Invalid input! Enter number of nodes in second partition range(n1, n1 + n2), n2 > 0: "))
         except ValueError:
             continue
 
@@ -224,7 +228,7 @@ def generate_clustered_graph(nodes):
     sizes_string = "com_sizes_" + sizes_string
     intra_inter = f"intra_{intra}_inter_{inter}"
 
-    return sizes_string, intra_inter, nx.stochastic_block_model(sizes, p_matrix)
+    return sizes_string, intra_inter, nx.stochastic_block_model(sizes, p_matrix, seed=generate_random_seed())
 
 
 def generate_random_regular_graph(nodes):
@@ -235,7 +239,7 @@ def generate_random_regular_graph(nodes):
         except ValueError:
             continue
 
-    return d, None, nx.random_regular_graph(d, nodes)
+    return d, None, nx.random_regular_graph(d, nodes, seed=generate_random_seed())
 
 def save_into_csv_file(G, f, val_1, val_2, graph_type):
     """Save the adjacency matrix of graph G into a CSV file."""
@@ -257,25 +261,28 @@ def save_into_csv_file(G, f, val_1, val_2, graph_type):
     random_key = generate_random_key()
 
     keys = graph_values.get(graph_type, [])
-    dir_path = f"{f}/n_{n}"
+    dir_path = f"input/{f}/n_{n}"
     if graph_type == "p":
-        dir_path = f"{f}/n_{val_2}"
+        dir_path = f"input/{f}/n_{val_2}"
     if keys:
         dir_path += f"_{keys[0]}_{val_1}"
         if graph_type != "p" and val_2 is not None and len(keys) > 1:
             dir_path += f"_{keys[1]}_{val_2}"
     filename = f"{dir_path}/d_{density}_{random_key}.csv"
+    if graph_type == "p":
+        dir_path = f"input/{f}/planar_graphs"
+        filename = f"{dir_path}/n_{val_1}_m_{val_2}_d_{density}_{random_key}.csv"
     if graph_type == "b":
-        dir_path = f"{f}/bipartite_graph"
+        dir_path = f"input/{f}/bipartite_graph"
         filename = f"{dir_path}/n1_{val_1}_n2_{val_2}_d_{density}_{random_key}.csv"
     if graph_type == "k":
-        dir_path = f"{f}/k_partite_graph"
+        dir_path = f"input/{f}/k_partite_graph"
         filename = f"{dir_path}/per_{val_1}_d_{density}_{random_key}.csv"
     if graph_type == "rr":
-        dir_path = f"{f}/regular_graph"
+        dir_path = f"input/{f}/regular_graph"
         filename = f"{dir_path}/n_{n}_deg_{val_1}_d_{density}_{random_key}.csv"
     if graph_type == "c":
-        dir_path = f"{f}/clustered_graph"
+        dir_path = f"input/{f}/clustered_graph"
         filename = f"{dir_path}/{val_1}_{val_2}_{random_key}.csv"
 
     os.makedirs(dir_path, exist_ok=True)
@@ -310,7 +317,7 @@ def generate_and_save_n_graphs(graph_type, k, n, f, val_1, val_2):
     graph_func = graph_generators.get(graph_type, lambda: print("Unknown graph type."))
 
     for _ in range(0, k):
-        if graph_type not in ["b", "k", "c", "rr"]:
+        if graph_type not in ["b", "k", "c", "rr", "p"]:
             val_1, val_2, graph = graph_func(n, val_1, val_2)
         else:
             val_1, val_2, graph = graph_func(n)
@@ -346,9 +353,9 @@ def main():
     graph_type = None
     nodes = None
     while flag:
-        graph_type = input("Enter your choice (r/w/f/p/b/rr/c/k): ").strip().lower()
-        if graph_type not in {'r', 'w', 'f', 'p', 'b', 'rr', 'c', 'k'}:
-            print("Invalid graph type selected. Please enter one of: r, w, f, p, b, rr, c")
+        graph_type = input("Enter your choice (r/w/f/p/b/k/rr/c): ").strip().lower()
+        if graph_type not in {'r', 'w', 'f', 'p', 'b', 'k', 'rr', 'c'}:
+            print("Invalid graph type selected. Please enter one of: r, w, f, p, b, k, rr, c")
         else:
             flag = False
     if graph_type in {"r", "w", "f", "rr"}:
@@ -376,7 +383,7 @@ def main():
         for n in nodes:
             val_1, val_2 = generate_and_save_n_graphs(graph_type, args.graphs, n, args.folder_name, val_1, val_2)
     else:
-        val_1, val_2 = generate_and_save_n_graphs(graph_type, args.graphs, nodes, args.folder_name, val_1, val_2)
+        generate_and_save_n_graphs(graph_type, args.graphs, nodes, args.folder_name, val_1, val_2)
 
 
 if __name__ == "__main__":

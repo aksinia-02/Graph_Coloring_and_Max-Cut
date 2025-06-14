@@ -1,6 +1,10 @@
 from itertools import product
 from collections import Counter
-from max_cut.tools import calculate_cut_size
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import tools
+from tools import calculate_cut_size
 
 
 def invalid_partition_check_eq(partition, n):
@@ -8,28 +12,64 @@ def invalid_partition_check_eq(partition, n):
     diff = max(nodes_counts.values()) - min(nodes_counts.values())
     return diff > n
 
+def gray_code(n):
+    """Generates Gray code sequence of n bits."""
+    for i in range(1 << n):
+        yield i ^ (i >> 1)
+
+
+def bit_position_change(prev, curr):
+    """Returns the index of the bit that changed between two Gray codes."""
+    return (prev ^ curr).bit_length() - 1
+
 
 def exact_max_cut(graph, n):
     nodes = list(graph.nodes())
-    max_cut_size = 0
-    best_partition = None
+    num_nodes = len(nodes)
+    node_indices = {i: nodes[i] for i in range(num_nodes)}
 
-    len_first_part_partitions = (pow(2, len(nodes))) / 2
-    print(len_first_part_partitions)
+    # Initialize with all zeros (partition to group 1)
+    curr_code = 0
+    partition = {node_indices[i]: 1 for i in range(num_nodes)}
 
-    for partition_bits in product([1, 2], repeat=len(nodes)):
-        if len_first_part_partitions <= 0:
-            break
-        len_first_part_partitions -= 1
-        partition = dict(zip(nodes, partition_bits))
-        if n != -1:
-            if invalid_partition_check_eq(partition, n):
-                continue
-        cut_size, cut = calculate_cut_size(graph, partition)
+    # Initial cut size
+    cut_size, cut = calculate_cut_size(graph, partition)
+    max_cut_size = cut_size
+    best_partition = partition.copy()
+
+    visited = set()
+    visited.add(curr_code)
+
+    for next_code in gray_code(num_nodes):
+        if (next_code & 1) == 1:
+            continue
+        if next_code in visited:
+            continue
+        visited.add(next_code)
+
+        flip_index = bit_position_change(curr_code, next_code)
+        flipped_node = node_indices[flip_index]
+
+        # Flip the node's partition
+        partition[flipped_node] = 2 if partition[flipped_node] == 1 else 1
+
+        # Incrementally update cut size
+        for neighbor in graph.neighbors(flipped_node):
+            if partition[neighbor] == partition[flipped_node]:
+                cut_size -= 1
+            else:
+                cut_size += 1
+
+        # Balance check
+        if n != -1 and invalid_partition_check_eq(partition, n):
+            curr_code = next_code
+            continue
 
         if cut_size > max_cut_size:
             print(f"New MAX CUT: {cut_size}")
             max_cut_size = cut_size
-            best_partition = partition
+            best_partition = partition.copy()
+
+        curr_code = next_code
 
     return best_partition, max_cut_size
