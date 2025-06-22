@@ -68,7 +68,12 @@ def backtrack_coloring_eq(node_index, coloring, nodes, counters, n, available):
     node = get_next_uncolored_node(nodes)
     colors = list(node.available_colors)
 
+    count_percent = 0
+
     for color in colors:
+        if node_index == 1:
+            print(f"{(count_percent / len(colors)) * 100:.2f}%")
+        count_percent = count_percent + 1
 
         coloring[node.index] = color
         counters[color - 1] += 1
@@ -119,8 +124,6 @@ def backtrack_coloring_eq(node_index, coloring, nodes, counters, n, available):
             removed_node.saturation -= 1
         available[color - 1] += len(removed_colors_nodes)
         if node_index == 0:
-            # print(f"available: {available}")
-            # print(f"nodes: {len(nodes)}")
             return False
     return False
 
@@ -132,7 +135,12 @@ def backtrack_coloring(node_index, coloring, nodes):
     node = get_next_uncolored_node(nodes)
     colors = list(node.available_colors)
 
+    count_percent = 0
+
     for color in colors:
+        if node_index == 1:
+            print(f"{(count_percent / len(colors)) * 100:.2f}%")
+        count_percent = count_percent + 1
 
         coloring[node.index] = color
 
@@ -167,26 +175,39 @@ def backtrack_coloring(node_index, coloring, nodes):
 # python .\graph_coloring_solver.py -f .\data\n_200_p_10\d_0.1_1VGDCXqC.csv -o 1 -n 1
 
 
-def exact_graph_coloring(graph, n):
+def exact_graph_coloring(graph, n, min_num_colors, max_num_colors):
     num_nodes = len(graph.nodes())
     low, high = 1, num_nodes
+    if min_num_colors:
+        print(f"Minimum number of colors is found from previous run: {min_num_colors}")
+        low = min_num_colors
+    if max_num_colors:
+        print(f"Maximum number of colors is found from previous run: {max_num_colors}")
+        high = max_num_colors
     result = num_nodes
     final_coloring = {}
 
-    small = 1 if num_nodes < 50 else 0
-    eq = 1 if n != -1 else 0
-    points = cal_density(graph) * 0.6 + small * 0.15 + eq * 0.25
+    # small = 1 if num_nodes < 30 else -1
+    # eq = 1 if n != -1 else 0
+    # sparse = 1 if cal_density(graph) < 0.3 else 0
+    # if n != 0:
+    #     points = sparse * 0.6 + small * 0.2 - 4 / n * eq * 0.2
+    # else:
+    #     points = 0
+    # print(f"Points: {points}")
 
-    if points > 0.5 or n == 0:
+    if n != -1 and num_nodes < 30 and cal_density(graph) < 0.3 or n == 0:
         print("Iterative search is used")
-
-        color_range = range(1, num_nodes + 1)
+        color_range = range(low, high + 1)
         if n == 0:
             numbers_col = []
             for i in color_range:
                 if num_nodes % i == 0:
                     numbers_col.append(i)
-            color_range = numbers_col
+            color_range = list(reversed(numbers_col))
+
+        last_successful_mid = None
+        last_successful_coloring = None
 
         for mid in color_range:
             color_sets = [set(range(1, mid + 1)) for _ in range(num_nodes)]
@@ -209,10 +230,22 @@ def exact_graph_coloring(graph, n):
                 success = backtrack_coloring(0, coloring, nodes)
 
             if success:
-                final_coloring = coloring.copy()
-                print(f"The coloring is possible with {mid} colors")
-                return mid, final_coloring
-            print(f"the coloring is NOT possible with {mid} colors")
+                if n != 0:
+                    final_coloring = coloring.copy()
+                    print(f"The coloring is possible with {mid} colors")
+                    return mid, final_coloring
+                else:
+                    last_successful_mid = mid
+                    last_successful_coloring = coloring.copy()
+                    print(f"The coloring is possible with {mid} colors")
+            elif not success and n == 0:
+                print(f"Returning last successful result with {last_successful_mid} colors")
+                return last_successful_mid, last_successful_coloring
+            if n != 0:
+                print(f"The coloring is NOT possible with {mid} colors")
+        if n == 0:
+            print(f"Returning last successful result with {last_successful_mid} colors")
+            return last_successful_mid, last_successful_coloring
     else:
         print("Binary search is used")
         while low <= high:
@@ -233,7 +266,7 @@ def exact_graph_coloring(graph, n):
                     available[color - 1] += 1
 
             if n != -1:
-                success = backtrack_coloring_eq(0, mid, coloring, nodes, counters, n, available)
+                success = backtrack_coloring_eq(0, coloring, nodes, counters, n, available)
             else:
                 success = backtrack_coloring(0, coloring, nodes)
 
@@ -245,5 +278,4 @@ def exact_graph_coloring(graph, n):
             else:
                 low = mid + 1
                 print(f"the coloring is NOT possible with {mid} colors")
-
     return result, final_coloring

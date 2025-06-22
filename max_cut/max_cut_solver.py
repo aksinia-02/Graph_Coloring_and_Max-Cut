@@ -1,8 +1,4 @@
 import argparse
-import csv
-import networkx as nx
-import matplotlib.cm as cm
-import numpy as np
 from max_cut.exact_max_cut import *
 from max_cut.heuristic_max_cut import *
 from collections import Counter
@@ -25,7 +21,7 @@ def run_solving_max_cut(graph, n, opt, full_file_path, visualization=False):
     base_name = os.path.basename(full_file_path)
     json_name = base_name.replace(".csv", "")
     suffix = "_h" if opt == 0 else "_o"
-    if n != -1:
+    if n == -1:
         json_name = f"{json_name}{suffix}_n_None_max_cut.json"
     else:
         json_name = f"{json_name}{suffix}_n_{n}_max_cut.json"
@@ -35,7 +31,7 @@ def run_solving_max_cut(graph, n, opt, full_file_path, visualization=False):
     max_cut_size = None
 
     if os.path.exists(output_path):
-        print(f"Found existing partition file: {output_path}. Loading .")
+        print(f"Found existing partition file: {output_path}. Loading...")
         with open(output_path, "r") as f:
             data = json.load(f)
             best_partition = data.get("partition")
@@ -59,12 +55,11 @@ def run_solving_max_cut(graph, n, opt, full_file_path, visualization=False):
     if best_partition is None:
         print("------------------------------------")
         print(f"Partition with difference {n} is impossible")
-        with open(output_path, "w") as f:
-            pass
-    else:
-        print("------------------------------------")
-        print(f"MAX CUT is {max_cut_size}")
 
+    print("------------------------------------")
+    print(f"MAX CUT is {max_cut_size}")
+
+    if best_partition is not None:
         nodes_counts = Counter(best_partition.values())
         print("------------------------------------")
         print(f"First set: {max(nodes_counts.values())}, second set: {min(nodes_counts.values())}")
@@ -74,7 +69,7 @@ def run_solving_max_cut(graph, n, opt, full_file_path, visualization=False):
         color_map = generate_color_map(2)
         display_colored_graph(graph, best_partition, color_map)
 
-    return max_cut_size
+    return max_cut_size, best_partition
 
 
 def validate_number(value):

@@ -148,12 +148,10 @@ def generate_complete_k_partite_graph(nodes):
     G = nx.Graph()
     partitions = []
     start = 0
-    total = sum(partition_sizes)
 
     result = ""
     for size in partition_sizes:
-        percent = (size / total) * 100
-        result += f"{round(percent)}-"
+        result += f"{size}_"
     result = result.rstrip("-")
     for size in partition_sizes:
         group = range(start, start + size)
@@ -231,13 +229,14 @@ def generate_clustered_graph(nodes):
     return sizes_string, intra_inter, nx.stochastic_block_model(sizes, p_matrix, seed=generate_random_seed())
 
 
-def generate_random_regular_graph(nodes):
-    d = int(input(f"Enter the degree of each node, d > 0. {nodes} * d must be even: "))
-    while not isinstance(d, int) or d <= 0 or (nodes * d) % 2 == 1:
-        try:
-            d = int(input(f"Invalid input! Enter the degree of each node, d > 0: "))
-        except ValueError:
-            continue
+def generate_random_regular_graph(nodes, d=None, val_2=None):
+    if not d:
+        d = int(input(f"Enter the degree of each node, d > 0. {nodes} * d must be even: "))
+        while not isinstance(d, int) or d <= 0 or (nodes * d) % 2 == 1:
+            try:
+                d = int(input(f"Invalid input! Enter the degree of each node, d > 0: "))
+            except ValueError:
+                continue
 
     return d, None, nx.random_regular_graph(d, nodes, seed=generate_random_seed())
 
@@ -317,7 +316,7 @@ def generate_and_save_n_graphs(graph_type, k, n, f, val_1, val_2):
     graph_func = graph_generators.get(graph_type, lambda: print("Unknown graph type."))
 
     for _ in range(0, k):
-        if graph_type not in ["b", "k", "c", "rr", "p"]:
+        if graph_type not in ["b", "k", "c", "p"]:
             val_1, val_2, graph = graph_func(n, val_1, val_2)
         else:
             val_1, val_2, graph = graph_func(n)

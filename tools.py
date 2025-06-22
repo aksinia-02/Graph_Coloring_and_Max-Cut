@@ -20,7 +20,8 @@ def display_colored_graph(G, coloring, color_map, output_file="graph.html"):
             color=color,
             x=x * 1000,
             y=y * 1000,
-            physics=False,
+            #physics=False,
+            size=50,
             font={'size': 36, 'face': 'arial', 'vadjust': 0}
         )
 

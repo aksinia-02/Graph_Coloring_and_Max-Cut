@@ -26,6 +26,9 @@ def bit_position_change(prev, curr):
 def exact_max_cut(graph, n):
     nodes = list(graph.nodes())
     num_nodes = len(nodes)
+
+    if n == 0 and (num_nodes % 2 != 0):
+        return None, 0
     node_indices = {i: nodes[i] for i in range(num_nodes)}
 
     # Initialize with all zeros (partition to group 1)
@@ -37,17 +40,15 @@ def exact_max_cut(graph, n):
     max_cut_size = cut_size
     best_partition = partition.copy()
 
-    visited = set()
-    visited.add(curr_code)
-
     for next_code in gray_code(num_nodes):
         if (next_code & 1) == 1:
+            curr_code = next_code
             continue
-        if next_code in visited:
-            continue
-        visited.add(next_code)
 
         flip_index = bit_position_change(curr_code, next_code)
+        if flip_index == -1:
+            curr_code = next_code
+            continue
         flipped_node = node_indices[flip_index]
 
         # Flip the node's partition

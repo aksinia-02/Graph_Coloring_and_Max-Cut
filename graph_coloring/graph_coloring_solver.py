@@ -13,7 +13,7 @@ from tools import read_from_csv_file
 ## python -m graph_coloring.graph_coloring_solver -f .\data_sparse\n_30_p_30\d_0.25_bIfpiUf1.csv -o 1 -n 1
 
 
-def run_solving_graph_coloring(graph, n, opt, full_file_path, visualization=False):
+def run_solving_graph_coloring(graph, n, opt, full_file_path, visualization=False, min_num_colors=7, max_num_colors=None):
     type_alg = "exact" if opt == 1 else "heuristic"
     print("------------------------------------")
     print(f"Start {type_alg} with diff {n}")
@@ -32,7 +32,7 @@ def run_solving_graph_coloring(graph, n, opt, full_file_path, visualization=Fals
     chromatic_number = None
 
     if os.path.exists(output_path):
-        print(f"Found existing coloring file: {output_path}. Loading coloring.")
+        print(f"Found existing coloring file: {output_path}. Loading coloring...")
         with open(output_path, "r") as f:
             coloring = json.load(f)
 
@@ -40,7 +40,7 @@ def run_solving_graph_coloring(graph, n, opt, full_file_path, visualization=Fals
 
     else:
         if opt == 1:
-            chromatic_number, coloring = exact_graph_coloring(graph, n)
+            chromatic_number, coloring = exact_graph_coloring(graph, n, min_num_colors, max_num_colors)
         else:
             chromatic_number, coloring = heuristic_graph_coloring(graph, n)
         with open(output_path, "w") as f:
@@ -50,7 +50,6 @@ def run_solving_graph_coloring(graph, n, opt, full_file_path, visualization=Fals
 
     print("------------------------------------")
     print(f"The final number of colors is {chromatic_number}")
-
     color_counts = Counter(coloring.values())
     print(f"Max color class: {max(color_counts.values())}, Min color class: {min(color_counts.values())},"
           f" Color classes difference is {max(color_counts.values()) - min(color_counts.values())}")
@@ -66,7 +65,7 @@ def run_solving_graph_coloring(graph, n, opt, full_file_path, visualization=Fals
         color_map = generate_color_map(chromatic_number)
         display_colored_graph(graph, coloring, color_map)
 
-    return chromatic_number
+    return chromatic_number, coloring
 
 
 def validate_number(value):

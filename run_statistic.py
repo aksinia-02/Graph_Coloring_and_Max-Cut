@@ -23,18 +23,19 @@ def load_or_create_dataframe(filename, type):
     if type == 1:
         columns = [
             "nodes", "edges", "density", "name",
-            "colors", "time", "offset_0_colors", "offset_0_time",
-            "offset_1_colors", "offset_1_time", "offset_2_colors", "offset_2_time",
+            "colors", "offset_0_colors", "offset_1_colors", "offset_2_colors",
+            "offset_3_colors", "offset_4_colors", "offset_5_colors"
         ]
+        suffix = "coloring"
     else:
         columns = [
             "nodes", "edges", "density", "name",
-            "cut_size", "time", "offset_0_cut_size", "offset_0_time",
-            "offset_1_cut_size", "offset_1_time", "offset_2_cut_size", "offset_2_time",
+            "cut_size", "offset_0_cut_size", "offset_1_cut_size", "offset_2_cut_size",
+            "offset_3_cut_size", "offset_4_cut_size", "offset_5_cut_size"
         ]
-
+        suffix = "max_cut"
     os.makedirs("output", exist_ok=True)
-    filename = f"output/{filename}"
+    filename = f"output/{suffix}_{filename}"
 
     if os.path.exists(filename):
         df = pd.read_csv(filename)
@@ -46,18 +47,20 @@ def load_or_create_dataframe(filename, type):
 
     return df
 
-def target_func(result, type, graph, n, opt, folder_path):
+def target_func(result, type, graph, n, opt, folder_path, min_num_colors, max_num_colors):
     if type == 1:
-        result[0] = run_solving_graph_coloring(graph, n, opt, folder_path)
+        coloring, chromatic_number = run_solving_graph_coloring(graph, n, opt, folder_path, False, min_num_colors, max_num_colors)
+        result[0] = (coloring, chromatic_number)
     else:
-        result[0] = run_solving_max_cut(graph, n, opt, folder_path)
+        max_cut_size, best_partition = run_solving_max_cut(graph, n, opt, folder_path)
+        result[0] = (max_cut_size, best_partition)
 
 
-def run_with_timeout(type, graph, n, opt, timeout=120, full_file_path=None):
+def run_with_timeout(type, graph, n, opt, timeout=120, full_file_path=None, min_num_colors=None, max_num_colors=None):
     manager = multiprocessing.Manager()
     result = manager.list([None])
 
-    process = multiprocessing.Process(target=target_func, args=(result, type, graph, n, opt, full_file_path))
+    process = multiprocessing.Process(target=target_func, args=(result, type, graph, n, opt, full_file_path, min_num_colors, max_num_colors))
     process.start()
     process.join(timeout)
 
@@ -79,6 +82,8 @@ def main():
                         help="Set to 1 if graph coloring are required, otherwise 0 for max cut.")
     parser.add_argument("-f", "--folder_names", type=str, required=True, nargs="+",
                         help="Folders names to be chosen to work with. Please save this folder in current directory.")
+    parser.add_argument("-s", "--save_statistic", type=int, choices=[0, 1], required=False,
+                       help="Set 1 to save unsaved statistic.")
 
     args = parser.parse_args()
     print(args)
@@ -104,7 +109,7 @@ def main():
         file_count = sum(
             os.path.isfile(os.path.join(folder_path, f))
             for f in os.listdir(folder_path)
-        ) * 4
+        ) * 7
         folder_file_count += file_count
 
     for folder_name in sorted(os.listdir(data_folder)):
@@ -113,7 +118,7 @@ def main():
         folder_path = os.path.join(data_folder, folder_name)
 
         if os.path.isdir(folder_path):
-            for file_name in sorted(os.listdir(folder_path)):
+            for file_name in sorted(f for f in os.listdir(folder_path) if f.endswith('.csv')):
                 file_path = os.path.join(folder_path, file_name)
                 print(file_path)
 
@@ -139,54 +144,158 @@ def main():
 
                     existing_rows = df[df["name"] == file_name]
 
-                    for diff in range(-1, 3):
+                    min_num_colors = 1
+                    max_num_colors = nodes
+                    prev_diff = 100
+                    prev_coloring = None
+                    prev_max_cut = 0
+                    prev_best_partition = None
+
+                    for diff in [-1, 0, 5, 4, 3, 2, 1]:
                         counter = counter + 1
 
                         if diff == -1:
                             key_color_cut = "colors" if type == 1 else "cut_size"
-                            key_time = f"time"
                         else:
                             key_color_cut = f"offset_{diff}_colors" if type == 1 else f"offset_{diff}_cut_size"
-                            key_time = f"offset_{diff}_time"
 
-                        if not existing_rows.empty and pd.notna(existing_rows.iloc[0].get(key_color_cut)) and pd.notna(
-                                existing_rows.iloc[0].get(key_time)):
-                            print(f"Skipping {file_name}, diff={diff} (already processed)")
-                            result_dict[key_color_cut] = existing_rows.iloc[0][key_color_cut]
-                            result_dict[key_time] = existing_rows.iloc[0][key_time]
-                            continue
+                        # if not existing_rows.empty and pd.notna(existing_rows.iloc[0].get(key_color_cut)):
+                        #     print(f"Skipping {file_name}, diff={diff} (already processed)")
+                        #     result_dict[key_color_cut] = existing_rows.iloc[0][key_color_cut]
+                        #     continue
 
                         opt = 1
+                        if args.save_statistic is None or args.save_statistic == 0:
 
-                        if type == 1:
-                            start_time = time.time()
-                            chromatic_number = run_with_timeout(
-                                type, graph, diff, opt, timeout=3600, full_file_path=file_path
-                            )
-                            end_time = time.time()
-                            execution_time = (end_time - start_time) / 60
-                            if chromatic_number is None:
-                                execution_time = None
-                            result_dict[key_color_cut] = chromatic_number
-                            result_dict[key_time] = execution_time
+                            if type == 1:
+
+                                if diff == -1:
+                                    result = run_with_timeout(
+                                        type, graph, diff, opt, timeout=1800, full_file_path=file_path,
+                                        min_num_colors=min_num_colors, max_num_colors=max_num_colors
+                                    )
+                                    if result is not None:
+                                        prev_coloring = result[1]
+                                        min_num_colors = result[0]
+                                        color_counts = Counter(result[1].values())
+                                        prev_diff = max(color_counts.values()) - min(color_counts.values())
+                                    # else:
+                                    #     break
+                                else:
+                                    if prev_diff > diff or diff == 5:
+                                        result = run_with_timeout(
+                                            type, graph, diff, opt, timeout=1800, full_file_path=file_path,
+                                            min_num_colors=min_num_colors, max_num_colors=max_num_colors
+                                        )
+                                        if result is not None:
+                                            if diff == 0:
+                                                max_num_colors = result[0]
+                                            else:
+                                                min_num_colors = result[0]
+                                            prev_coloring = result[1]
+                                            color_counts = Counter(prev_coloring.values())
+                                            prev_diff = max(color_counts.values()) - min(color_counts.values())
+                                        else:
+                                            break
+                                    else:
+                                        base_name = os.path.basename(file_path)
+                                        json_name = base_name.replace(".csv", "")
+                                        suffix = "_h" if opt == 0 else "_o"
+                                        if diff != -1:
+                                            json_name = f"{json_name}{suffix}_n_{diff}_coloring.json"
+                                        else:
+                                            json_name = f"{json_name}{suffix}_n_None_coloring.json"
+                                        output_path = os.path.join(os.path.dirname(file_path), json_name)
+                                        if not os.path.exists(output_path):
+                                            with open(output_path, "w") as f:
+                                                json.dump(prev_coloring, f, indent=4)
+                                                print("------------------------------------")
+                                                print(f"Coloring is saved to {output_path}")
+                                        else:
+                                            print("------------------------------------")
+                                            print(f"Coloring file is already exist {output_path}")
+
+
+                            else:
+                                if diff == -1:
+                                    result = run_with_timeout(
+                                        type, graph, diff, opt, timeout=1800, full_file_path=file_path, min_num_colors=None
+                                    )
+                                    if result is not None:
+                                        prev_max_cut = result[0]
+                                        prev_best_partition = result[1]
+                                        if prev_best_partition is not None:
+                                            nodes_counts = Counter(prev_best_partition.values())
+                                            prev_diff = max(nodes_counts.values()) - min(nodes_counts.values())
+                                else:
+                                    if prev_diff > diff:
+                                        result = run_with_timeout(
+                                            type, graph, diff, opt, timeout=1800, full_file_path=file_path, min_num_colors=None
+                                        )
+                                        if result is not None:
+                                            prev_max_cut = result[0]
+                                            prev_best_partition = result[1]
+                                            if prev_best_partition is not None:
+                                                nodes_counts = Counter(prev_best_partition.values())
+                                                prev_diff = max(nodes_counts.values()) - min(nodes_counts.values())
+                                    else:
+                                        base_name = os.path.basename(file_path)
+                                        json_name = base_name.replace(".csv", "")
+                                        suffix = "_h" if opt == 0 else "_o"
+                                        if diff == -1:
+                                            json_name = f"{json_name}{suffix}_n_None_max_cut.json"
+                                        else:
+                                            json_name = f"{json_name}{suffix}_n_{diff}_max_cut.json"
+                                        output_path = os.path.join(os.path.dirname(file_path), json_name)
+                                        if not os.path.exists(output_path):
+                                            with open(output_path, "w") as f:
+                                                json.dump({
+                                                    "partition": prev_best_partition,
+                                                    "max_cut_size": prev_max_cut
+                                                }, f, indent=4)
+                                            print("------------------------------------")
+                                            print(f"Partition is saved to {output_path}")
+                                        else:
+                                            print("------------------------------------")
+                                            print(f"Partition file is already exist {output_path}")
+                            print(f"{(counter / folder_file_count) * 100:.2f}%")
+
+                        base_name = os.path.basename(file_path)
+                        json_name = base_name.replace(".csv", "")
+                        suffix = "_h" if opt == 0 else "_o"
+                        suffix_type = "_coloring" if type == 1 else "_max_cut"
+
+                        if diff != -1:
+                            json_name = f"{json_name}{suffix}_n_{diff}{suffix_type}.json"
                         else:
-                            start_time = time.time()
-                            cut_size = run_with_timeout(
-                                type, graph, diff, opt, timeout=3600, full_file_path=file_path
-                            )
-                            end_time = time.time()
-                            execution_time = (end_time - start_time) / 60
-                            if cut_size is None:
-                                execution_time = None
-                            result_dict[key_color_cut] = cut_size
-                            result_dict[key_time] = execution_time
-                        print(f"{(counter / folder_file_count) * 100:.2f}%")
+                            json_name = f"{json_name}{suffix}_n_None{suffix_type}.json"
+                        output_path = os.path.join(os.path.dirname(file_path), json_name)
+
+                        print(json_name)
+
+                        if os.path.exists(output_path):
+                            if type == 1:
+                                print(f"Found existing coloring file: {output_path}. Loading coloring...")
+                                with open(output_path, "r") as f:
+                                    coloring = json.load(f)
+
+                                result_dict[key_color_cut] = max(coloring.values()) if coloring else None
+                            else:
+                                print(f"Found existing partition file: {output_path}. Loading...")
+                                with open(output_path, "r") as f:
+                                    data = json.load(f)
+                                    result_dict[key_color_cut] = data.get("max_cut_size")
 
                     results.append(result_dict)
+                    print(result_dict)
 
     if results:
         df = pd.concat([df, pd.DataFrame(results)], ignore_index=True)
-        df.to_csv(f"output/{output_file}", index=False)
+        if type == 1:
+            suffix = "coloring"
+        else:
+            suffix = "max_cut"
+        df.to_csv(f"output/{suffix}_{output_file}", index=False)
         print(f"Results saved to output/{output_file}\n\n")
 
 
