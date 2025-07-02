@@ -70,7 +70,6 @@ def run_solving_max_cut(graph, n, opt, full_file_path, visualization=False):
 
     return max_cut_size, best_partition
 
-
 def validate_number(value):
     int_value = int(value)
     if int_value < -1:
