@@ -13,7 +13,7 @@ from tools import read_from_csv_file
 ## python -m graph_coloring.graph_coloring_solver -f .\data_sparse\n_30_p_30\d_0.25_bIfpiUf1.csv -o 1 -n 1
 
 
-def run_solving_graph_coloring(graph, n, opt, full_file_path, visualization=False, min_num_colors=7, max_num_colors=None):
+def run_solving_graph_coloring(graph, n, opt, full_file_path, visualization=False, min_num_colors=None, max_num_colors=None):
     type_alg = "exact" if opt == 1 else "heuristic"
     print("------------------------------------")
     print(f"Start {type_alg} with diff {n}")
@@ -50,9 +50,10 @@ def run_solving_graph_coloring(graph, n, opt, full_file_path, visualization=Fals
 
     print("------------------------------------")
     print(f"The final number of colors is {chromatic_number}")
-    color_counts = Counter(coloring.values())
-    print(f"Max color class: {max(color_counts.values())}, Min color class: {min(color_counts.values())},"
-          f" Color classes difference is {max(color_counts.values()) - min(color_counts.values())}")
+    if coloring is not None:
+        color_counts = Counter(coloring.values())
+        print(f"Max color class: {max(color_counts.values())}, Min color class: {min(color_counts.values())},"
+              f" Color classes difference is {max(color_counts.values()) - min(color_counts.values())}")
 
     print("------------------------------------")
     if is_valid_coloring(graph, coloring):

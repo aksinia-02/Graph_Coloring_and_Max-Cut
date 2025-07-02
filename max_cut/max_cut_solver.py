@@ -11,7 +11,6 @@ from tools import display_colored_graph
 from tools import generate_color_map
 from tools import read_from_csv_file
 
-
 def run_solving_max_cut(graph, n, opt, full_file_path, visualization=False):
     type_alg = "exact" if opt == 1 else "heuristic"
     print("------------------------------------")

@@ -72,7 +72,7 @@ def backtrack_coloring_eq(node_index, coloring, nodes, counters, n, available):
 
     for color in colors:
         if node_index == 1:
-            print(f"{(count_percent / len(colors)) * 100:.2f}%")
+            print(f"Progress: {(count_percent / len(colors)) * 100:.2f}%")
         count_percent = count_percent + 1
 
         coloring[node.index] = color
@@ -139,7 +139,7 @@ def backtrack_coloring(node_index, coloring, nodes):
 
     for color in colors:
         if node_index == 1:
-            print(f"{(count_percent / len(colors)) * 100:.2f}%")
+            print(f"Progress: {(count_percent / len(colors)) * 100:.2f}%")
         count_percent = count_percent + 1
 
         coloring[node.index] = color
@@ -187,16 +187,7 @@ def exact_graph_coloring(graph, n, min_num_colors, max_num_colors):
     result = num_nodes
     final_coloring = {}
 
-    # small = 1 if num_nodes < 30 else -1
-    # eq = 1 if n != -1 else 0
-    # sparse = 1 if cal_density(graph) < 0.3 else 0
-    # if n != 0:
-    #     points = sparse * 0.6 + small * 0.2 - 4 / n * eq * 0.2
-    # else:
-    #     points = 0
-    # print(f"Points: {points}")
-
-    if n != -1 and num_nodes < 30 and cal_density(graph) < 0.3 or n == 0:
+    if n != -1:
         print("Iterative search is used")
         color_range = range(low, high + 1)
         if n == 0:
@@ -204,10 +195,7 @@ def exact_graph_coloring(graph, n, min_num_colors, max_num_colors):
             for i in color_range:
                 if num_nodes % i == 0:
                     numbers_col.append(i)
-            color_range = list(reversed(numbers_col))
-
-        last_successful_mid = None
-        last_successful_coloring = None
+            color_range = list(numbers_col)
 
         for mid in color_range:
             color_sets = [set(range(1, mid + 1)) for _ in range(num_nodes)]
@@ -230,22 +218,11 @@ def exact_graph_coloring(graph, n, min_num_colors, max_num_colors):
                 success = backtrack_coloring(0, coloring, nodes)
 
             if success:
-                if n != 0:
-                    final_coloring = coloring.copy()
-                    print(f"The coloring is possible with {mid} colors")
-                    return mid, final_coloring
-                else:
-                    last_successful_mid = mid
-                    last_successful_coloring = coloring.copy()
-                    print(f"The coloring is possible with {mid} colors")
-            elif not success and n == 0:
-                print(f"Returning last successful result with {last_successful_mid} colors")
-                return last_successful_mid, last_successful_coloring
-            if n != 0:
+                final_coloring = coloring.copy()
+                print(f"The coloring is possible with {mid} colors")
+                return mid, final_coloring
+            else:
                 print(f"The coloring is NOT possible with {mid} colors")
-        if n == 0:
-            print(f"Returning last successful result with {last_successful_mid} colors")
-            return last_successful_mid, last_successful_coloring
     else:
         print("Binary search is used")
         while low <= high:
