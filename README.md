@@ -53,7 +53,9 @@ For this study, a custom random graph generator was created. It allows to genera
 ### Options
 
   -h, --help                     show this help message and exit
+  
   -k, --graphs GRAPHS            The number of graphs.
+  
   -f, --folder_name FOLDER_NAME  Folder name for output.
 
 Other steps can be triggered by starting the algorithm and selecting the graph generation type.
@@ -70,8 +72,11 @@ The solution includes a visualization of the partitions and a JSON file saved fo
 ### Options
 
   -h, --help           show this help message and exit
+  
   -f, --file FILE      Path to the CSV file.
+  
   -n, --number NUMBER  Offset for equitable coloring.
+  
   -o, --optimal {0,1}  Set to 1 if an optimal solution is required, otherwise 0 for a heuristic solution.
 
 ### Example of use
@@ -83,9 +88,12 @@ The solution includes a visualization of the partitions and a JSON file saved fo
 
 ### Options
 
-  -h, --help           show this help message and exit
+  -h, --help           show this help message and 
+  
   -f, --file FILE      Path to the CSV file.
+  
   -n, --number NUMBER  Offset between partitions.
+  
   -o, --optimal {0,1}  Set to 1 if an optimal solution is required, otherwise 0 for a heuristic solution.
 
 ### Example of use
@@ -97,9 +105,12 @@ Iterates through graphs in the specified folder, calculates solutions for each g
 
 ### Options
 
-  -h, --help            show this help message and exit                                  
-  -i, --input INPUT     Input folder with data.                                          
+  -h, --help            show this help message and exit   
+  
+  -i, --input INPUT     Input folder with data.          
+  
   -t, --type {0,1}      Set to 1 if graph coloring are required, otherwise 0 for max cut.
+  
   -f, --folder_names FOLDER_NAMES [FOLDER_NAMES ...]                                     
                         Folders names to be chosen to work with. Please save this folder in current directory.
 
@@ -115,8 +126,11 @@ Saves precalculated results from the input folder into an output CSV file.
 
   -h, --help            show this help message and exit
   -o, --output OUTPUT   Output file for results.
+  
   -i, --input INPUT     Input folder with data.
+  
   -t, --type {0,1}      Set to 1 if graph coloring are required, otherwise 0 for max cut.
+  
   -f, --folder_names FOLDER_NAMES [FOLDER_NAMES ...]
                         Folders names to be chosen to work with. Please save this folder in current directory.
 
